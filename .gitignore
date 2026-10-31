@@ -1,0 +1,24 @@
+# Gradle / Android
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+.kotlin/
+
+# Flutter
+.dart_tool/
+flutter/**/.flutter-plugins*
+flutter/**/pubspec.lock
+
+# Modeller çalışma anında iner, depoya girmez
+*.mdl
+*.onnx
+*.safetensors
+*.zip
+
+# İmza / sırlar
+*.jks
+*.keystore
+key.properties
+env.json
