@@ -101,8 +101,16 @@ mikrofon ─► │ Uyanma: Vosk dilbilgisi ("hey asistan", "hey harita", "hey n
 
 ## 5. Android kısıtları (bilinen, Faz 1'de telefonda doğrulanır)
 
+- **Asistanın ekranı açık olmak zorunda değil.** Dinleme bir ön plan servisinde (mikrofon türü, kalıcı bildirim)
+  sürer. Harita öndeyken ya da ekran kilitliyken (navigasyon) de çalışır. Şart: servis bir kez "ön plandayken"
+  başlamış olmalı.
 - **Açılışta mikrofon servisi başlatılamaz** (Android 11+/15: `BOOT_COMPLETED` → mikrofon ön plan servisi yasak).
-  Dicio bunu "başlatmak için dokun" bildirimiyle çözüyor; aynen kalır.
+  Dicio bunu "başlatmak için dokun" bildirimiyle çözüyor; yedek olarak kalır. Asıl yol: **bağlı uygulama asistanı
+  kendisi başlatır.** Harita ekrandayken asistanın köprü servisine `Context.BIND_INCLUDE_CAPABILITIES` ile bağlanır.
+  Öndeki uygulamanın mikrofon yetkisi bu bayrakla bağlı servise geçer (Android 11+ hedefte bayrak açıkça
+  verilmeli), asistan da kendi mikrofon servisini başlatır. Böylece telefon yeniden başlasa bile asistanı ayrıca açmak
+  gerekmez. Ekran kilitlenince Harita'nın elinde yalnız konum yetkisi kalır, ama asistanın servisi zaten başlamış
+  olduğu için dinleme sürer. Faz 3'te telefonda doğrulanır.
 - **Arka plandan ekran açma:** "Hey Harita, Kızılay'a git" Harita kapalıyken haritayı açmalı. Android 10+ arka
   plandan Activity açmayı engeller. İstisna "diğer uygulamaların üzerinde göster" (`SYSTEM_ALERT_WINDOW`) izni.
   HyperOS'ta ayrıca "arka planda açılır pencere göster" izni gerekir. Uygulama `AÇ` ile PendingIntent verir (Harita
@@ -161,6 +169,8 @@ mikrofon ─► │ Uyanma: Vosk dilbilgisi ("hey asistan", "hey harita", "hey n
 ### Faz 3 — Harita geçişi
 - [ ] Harita'da köprü servisi + `ses_yetenekler.xml`: `METIN` → `interpret`; `offer` seçenekleri `SOR` ile
   (cevabı asistan dinler); navigasyon başladı/bitti `DURUM` ile.
+- [ ] Harita açılınca asistana `BIND_INCLUDE_CAPABILITIES` ile bağlanır; asistan hiç açılmadan dinlemeye başlar
+  (§5). Asistan kurulu değilse ya da bağlanamazsa Harita'nın mikrofon düğmesi asistanı açar.
 - [ ] Yönlendirme sesi `SÖYLE(tür = talimat|uyarı)` ile asistana gider. Bayat talimat kuralı korunur: asistan
   okuyamadan bayatlarsa `Navigator.restate` karşılığını Harita'dan ister. Asistana ulaşılamazsa Harita'daki
   Android TTS'e düşer.
@@ -173,7 +183,9 @@ mikrofon ─► │ Uyanma: Vosk dilbilgisi ("hey asistan", "hey harita", "hey n
   - navigasyonda dururken CPU tabanı ~%4 korunuyor,
   - asistan zorla durdurulunca (`am force-stop`) yönlendirme Android sesiyle sürüyor,
   - görüşmede mikrofon bırakılıyor,
-  - "Hey Harita, Kızılay'a git" Harita kapalıyken haritayı açıp rotayı kuruyor.
+  - "Hey Harita, Kızılay'a git" Harita kapalıyken haritayı açıp rotayı kuruyor,
+  - telefon yeniden başladıktan sonra asistan hiç açılmadan, yalnız Harita açılınca "Hey Harita" çalışıyor
+    (ekran kilitliyken de).
 
 ### Faz 4 — Notlar köprüsü (yalnız kişisel derleme)
 - [ ] KARAR K4 (köprünün dağıtılan APK'dan nasıl çıkacağı) sorulur.
