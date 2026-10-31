@@ -72,7 +72,7 @@ mikrofon ─► │ Uyanma: Vosk dilbilgisi ("hey asistan", "hey harita", "hey n
 |---|---|---|---|---|
 | **Harita** | Kendi "Hey Harita"sı (Vosk), Google tanıma, dikte, Antalia, Gemini | Köprü: metin devri, `SÖYLE` (yönlendirme sesi), `SOR` (seçenek), `DURUM` (navigasyon) | Büyük (Faz 3): ses girişi ve Antalia kalkar, Android TTS yedek kalır | Kişisel |
 | **Kanallarım** | Ses yok; Harita onu MediaBrowser + `not_al` oturum komutuyla yönetiyor | Aynı yol: Harita'nın `Media.kt`/`MediaWords` mantığı asistan becerisine taşınır | **Yok** (Faz 2) | Kişisel |
-| **Notlar** | `HaritaNotAlici` (sıralı yayın) Harita'dan not alıyor; kendi dikte/TTS'i | "Not al": mevcut alıcıya aynı yayın. "Ara / oku / son notlar": yeni kişisel köprü (`Ajan.kt` mantığı) | Küçük, ayrık (Faz 4) | **Dağıtılacak** → köprü yalnız kişisel derlemede |
+| **Notlar** (`kaimau1/not`) | `HaritaNotAlici` (sıralı yayın) Harita'dan not alıyor; kendi dikte/TTS'i | "Not al": mevcut alıcıya aynı yayın. "Ara / oku / son notlar": yeni kişisel köprü (`Ajan.kt` mantığı) | Küçük, ayrık (Faz 4) | **Dağıtılacak** → köprü yalnız kişisel derlemede |
 | **Dosya Okuyucu** | Ses komutu yok; sesli kitap `flutter_tts` | Köprü: aç, son dosya, sesli oku/durdur, özetle | Küçük, `ci/` yamasıyla (Faz 5) | **Dağıtılacak** → köprü yalnız kişisel derlemede |
 
 ## 3. Köprü protokolü (taslak; Faz 2'de `PROTOKOL.md` olarak kesinleşir)
@@ -207,16 +207,18 @@ mikrofon ─► │ Uyanma: Vosk dilbilgisi ("hey asistan", "hey harita", "hey n
 - [x] KARAR K4 (köprünün dağıtılan APK'dan nasıl çıkacağı) sorulur. (**Derleme bayrağı**: `NOTLAR_KISISEL=1` ya da
   `-Pkisisel=true` → release'e `android/app/src/kisisel` eklenir; Dosya Okuyucu'da da aynı yöntem.)
 - [x] "Not al" (dikte asistanda) → `HaritaNotAlici` yayını (klasör/başlık/sabitle ekleri). Alıcı
-  `knownSigner` izniyle korunur. (Alıcı Notlar'da hiç yoktu — Harita ve Kanallarım karşılıksız yayın atıyordu, bkz.
-  HAFIZA; Faz 4'te yazıldı. Asistan: `beceri/NotlarBecerisi`, notlar "Asistan" klasörüne. Harita ve Kanallarım
-  manifestine `dev.kaimau.notlar.izin.ASISTAN` eklendi.)
+  `knownSigner` izniyle korunur. (Notlar deposu **`kaimau1/not`** — ilk deneme yanlış kopyada yapılmıştı, bkz. HAFIZA.
+  Alıcı `HaritaNotlari.kt` orada zaten vardı; `android/app/src/kisisel/`'e taşındı, izinle korundu. Asistan:
+  `beceri/NotlarBecerisi`, notlar "Asistan" klasörüne. Harita ve Kanallarım manifestinde
+  `dev.kaimau.notlar.izin.ASISTAN` var.)
 - [x] "Notlarımda X'i ara", "son notumu oku", "son notlar": yeni köprü (`Ajan.kt` + `YerelNot` mantığı; Flutter
-  motoru açılmaz). Kilitli ve gizli klasördeki notlar asla verilmez. (`Ajan.kt`/`YerelNot` Notlar'da yok; köprü
-  `ASISTAN_SORGU` yayını, alıcı uygulamanın Firebase Android SDK'sıyla doğrudan okur — `NotDeposu.kt`. Liste okunur,
+  motoru açılmaz). Kilitli ve gizli klasördeki notlar asla verilmez. (Köprü `ASISTAN_SORGU` yayını; alıcı ve
+  `Ajan.kt` ortak `YerelNot.gorunurNotlar`/`ara`'yı kullanır. Liste okunur,
   "ikinci"/adıyla seçilen not okunur. "Hey Notlar …" asistanın Notlar becerisine gider.)
 - [ ] Bitti sayılır: kişisel APK'da komutlar çalışıyor; genel (dağıtılan) APK'da köprü yok (manifest denetimi) ve
   Notlar'ın kendi sesli özellikleri değişmemiş. (Genel APK manifest denetimi CI'da; Notlar'ın Dart koduna
-  dokunulmadı. Telefonda denenecek: kişisel APK `kisisel` sürümünden, Notlar'da başlıkta `[kisisel]` ile derlenir.)
+  dokunulmadı. CI telefona giden APK'yı `NOTLAR_KISISEL=1` ile derler; telefonda denenecek: Notlar güncellenince
+  Harita ve Kanallarım yeniden kurulur — izni tanımlayan Notlar onlardan sonra kuruldu.)
 
 ### Faz 5 — Dosya Okuyucu köprüsü (yalnız kişisel derleme)
 - [x] Köprü Kotlin'i `ci/` yaması olarak (`prepare_android.sh`), kişisel bayrakla; `tool/check_kotlin.sh` koşulur.

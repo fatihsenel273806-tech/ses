@@ -10,7 +10,7 @@ Bağlanan uygulamalar:
 |---|---|---|---|
 | Harita Ankara | `fatihsenel273806-tech/harita` | köprü servisi (metin devri, yönlendirme sesi) | kişisel |
 | Kanallarım | `fatihsenel273806-tech/YouTube` | MediaBrowser + `not_al` oturum komutu | kişisel |
-| Notlar | `fatihsenel273806-tech/not` | sıralı yayın + köprü, **yalnız kişisel derlemede** | dağıtılacak |
+| Notlar | `kaimau1/not` (fatihsenel273806-tech/not eski/yanlış kopya, kullanılmaz) | sıralı yayın + köprü, **yalnız kişisel derlemede** | dağıtılacak |
 | Dosya Okuyucu | `kaimau1/dosya-okuyucu` | köprü (`ci/` yaması), **yalnız kişisel derlemede** | dağıtılacak |
 
 ## Plan ve hafıza

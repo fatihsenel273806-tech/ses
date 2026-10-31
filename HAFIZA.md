@@ -91,21 +91,27 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
 - **2026-10-31 — Otomatik faz zinciri** (kullanıcı): her oturum bir faz yapar, `main`'e alır, sonraki fazı yeni
   oturumda başlatır; kalan işler bitene kadar. Kararlar önden soruldu: **K4 derleme bayrağı**, **K6 evet (varsayılan
   dijital asistan)**, telefonda ölçüm gereken maddeler 🟨 bırakılıp geçilir, **K5 şimdilik Vosk** (ölçüm telefonda).
-- **2026-10-31 — Faz 4: Notlar'da `HaritaNotAlici` hiç yoktu** (kök neden). Harita `NoteBridge` ve Kanallarım `Not.kt`
-  "Notlar'daki HaritaNotlari.kt" alıcısına sıralı yayın atıyordu; Notlar deposunun `main`'inde ve 2000 commit'lik
-  geçmişinde böyle bir alıcı yok (yalnız kullanıcının makinesinde kalmış olabilir). Yani "not al" hep "Not
-  kaydedilemedi" ile bitiyordu. Faz 4'te yazıldı: `android/app/src/kisisel/` (`HaritaNotAlici`, `NotDeposu`, izin,
-  sertifikalar). PLAN'daki `Ajan.kt` / `YerelNot` de Notlar'da yok.
-- **2026-10-31 — Notlar köprüsü: yayın + Firebase Android SDK** (Faz 4). Bağlı servis yerine sıralı yayın: konuşma
-  kısa ve tek yönlü, Notlar'ın asistana bağlanması gerekmiyor (sertifikası da gerekmiyor). Alıcı notu Flutter motoru
-  açmadan uygulamanın kendi Firebase SDK'sıyla yazar/okur (`cloud_firestore` aynı SDK; aynı süreç, önbellek, oturum).
-  Tuzaklar: (1) süreç yayın için uyanınca varsayılan FirebaseApp yok; `firebase_options.dart` ile AYNI seçeneklerle
-  açılır (yoksa Dart'ın `initializeApp`'ı duplicate-app ile düşer; CI denetler). (2) Firestore'u biz başlattıysak iş
-  bitince `terminate` (Dart'ın `settings` ataması başlamış örnekte hata verir). (3) Ön plan yayınında ~10 sn: her
-  bekleme 3 sn, klasör önce önbellekten. (4) Kotlin derlemesi için firebase BoM `releaseCompileOnly`, sürüm
-  `firebase_core`'un `FirebaseSDKVersion`'ı (34.15.0); sınıflar çalışma anında eklentilerden. Asistan dikteyi kendisi
-  yapar (Harita `dictateNote` akışı), notlar "Asistan" klasörüne. Alıcı izinle korunduğu için Harita ve Kanallarım
-  manifestine `dev.kaimau.notlar.izin.ASISTAN` eklendi (izni tanımlayan Notlar sonra kurulursa onlar yeniden kurulur).
+- **2026-10-31 — Notlar'ın geçerli deposu `kaimau1/not`** (kullanıcı: "kişisel notlar yanlış hesapta yapılmış,
+  kaimau1 hesabındaki notlarda çalışıyoruz"). Faz 4 önce `fatihsenel273806-tech/not`'ta yapılmıştı; oradaki
+  "`HaritaNotAlici` hiç yok, `Ajan.kt`/`YerelNot` yok" tespiti YANLIŞ DEPODAN geliyordu (o kopya eski). kaimau1/not'ta
+  alıcı (`HaritaNotlari.kt`: Harita ve Kanallarım'ın notları, video notu, oturumsuz sıra), `YerelNot.kt` (Flutter'sız
+  Firestore) ve `Ajan.kt` (Gemini AppFunctions) zaten çalışıyordu — ama dışa açık, korumasız ve genel APK'daydı.
+  Ders: başka depoya dokunmadan önce `list_repos` ile aynı adlı kopyalar denetlenir; hangisinin canlı olduğu
+  (son push, CI sürümü) doğrulanır. fatihsenel273806-tech/not'taki Faz 4 işi kullanılmaz (bu oturum oraya erişemedi:
+  aynı adlı iki depo tek oturuma eklenemiyor).
+- **2026-10-31 — Notlar köprüsü kaimau1/not'ta** (Faz 4 yeniden). Sıralı yayın (bağlı servis değil: konuşma kısa,
+  Notlar'ın asistana bağlanması gerekmiyor). `HaritaNotlari.kt` → `android/app/src/kisisel/` (+ `KisiselKopru`,
+  manifest, sertifikalar); `src/genel/KisiselKopru` boş. Bayrak `NOTLAR_KISISEL=1` / `-Pkisisel=true` yalnız release'i
+  etkiler (debug/profile genel). CI telefona giden APK'yı bayrakla derler ("şimdilik release'de" kararı korunur),
+  "genel kaynakta köprü yok" ve "alıcı izinle korunuyor" denetimleri CI'da. Alıcı `dev.kaimau.notlar.izin.ASISTAN`
+  (knownSigner: asistan, Harita, Kanallarım) ile korunur; yeni eylem `ASISTAN_SORGU`. Sorgu ile Gemini işlevleri ortak
+  `YerelNot.gorunurNotlar`/`ara` (kilitli not, gizli klasör asla). Firebase: alıcının süreci google-services'in
+  otomatik `FirebaseApp`'iyle açılır; `YerelNot.firestore()` Dart'ın önbellek ayarının aynısını verir (farklıysa
+  FlutterFire istisna atar). Asistan dikteyi kendisi yapar, notlar "Asistan" klasörüne.
+- **Bulut derleme tuzağı (Notlar, 2026-10-31)**: compileSdk 37'de sembolik bağ yetmedi (AGP `package.xml`'den
+  okur): `platforms/android-37.0` → `android-37` kopyalanıp `package.xml`'de yol `platforms;android-37` ve
+  `<api-level>37</api-level>` yapılır. Ayna: Notlar'da ayna eklenti depolarının önüne (portal Central'a yönlendirir)
+  + diğer depolarda yalnız Central adresi aynaya çevrilir; Dicio'da (ses) ayna her yerde önde.
 - **Derleme tuzağı (bulut, Flutter)**: Flutter'ın `flutter_tools/gradle` dahil derlemesinin `pluginManagement`'ı boş;
   init betiği oraya yalnız aynayı koyarsa Gradle varsayılan eklenti portalını kaybeder (`kotlin-dsl` bulunamaz). Boşsa
   önce `gradlePluginPortal()` + `google()` eklenir; eklenti portalı kullanan projelerde (Dicio'nun `sentences-compiler-plugin`'i)

@@ -129,18 +129,19 @@ yeniden kurulur.
 Notlar'ın köprü servisi yok (Flutter uygulaması; asistanla konuşma tek yönlü ve kısa). Asistan, Harita ve Kanallarım
 **sıralı yayınla** (`sendOrderedBroadcast`, bileşen `dev.kaimau.notlar/.HaritaNotAlici`,
 `FLAG_INCLUDE_STOPPED_PACKAGES | FLAG_RECEIVER_FOREGROUND`) yazar ve sorar. Alıcı yalnız Notlar'ın **kişisel**
-derlemesinde var (`android/app/src/kisisel`, `NOTLAR_KISISEL=1`); genel APK'da yoktur, yayın cevapsız kalır (kod 0).
-Notlar öne gelmez, Flutter motoru açılmaz: alıcı uygulamanın Firebase Android SDK'sıyla doğrudan yazar/okur.
+derlemesinde var (`kaimau1/not`, `android/app/src/kisisel`, `NOTLAR_KISISEL=1`); genel APK'da yoktur, yayın cevapsız
+kalır (kod 0). Notlar öne gelmez, Flutter motoru açılmaz: alıcı yerel Firestore SDK'sıyla yazar/okur (`YerelNot`).
 
 | Eylem | Ekler | Cevap kodu | Cevap ekleri |
 |---|---|---|---|
-| `dev.kaimau.notlar.HARITA_NOT` | `text`, `title`, `folder` (yoksa "Haritalar"), `place`, `pinned` | 1 yazıldı (sunucu onayladı), 2 sırada (çevrimdışı ya da giriş yok; bağlantı/giriş gelince yazılır), 0 olmadı | — |
+| `dev.kaimau.notlar.HARITA_NOT` | `text`, `title`, `folder` (yoksa "Haritalar"), `place`, `pinned`, `transcript` (Kanallarım) | 1 yazıldı (yerelde; çevrimdışıysa Firestore kuyruğunda), 2 sırada (oturum yok; uygulama açılınca yazılır) | — |
 | `dev.kaimau.notlar.ASISTAN_SORGU` | `istek` (`son` \| `ara`), `terimler` (ArrayList<String>, `ara`'da hepsi notta geçmeli), `adet` (1–10) | 1 tamam, 3 giriş yok, 0 olmadı | `basliklar`, `metinler` (ArrayList<String>), `zamanlar` (long[], ms) |
 
 - Silinen, arşivlenen, **kilitli** notlar ve **gizli klasördeki** notlar sorguda asla verilmez.
-- Klasör adıyla bulunur (büyük/küçük harf duyarsız), yoksa açılır. Asistanın aldığı notlar "Asistan" klasörüne,
-  Harita'nınkiler "Haritalar"a, Kanallarım'ınkiler "YouTube"a (sabitli).
-- Kanallarım'ın `transcript` eki şimdilik yok sayılır (Notlar'da tam transkript/AI düzeltme yolu yok).
+- Klasör adıyla bulunur, yoksa sabit kimlikle açılır (adın küçük harf/rakamları). Asistanın aldığı notlar "Asistan"
+  klasörüne, Harita'nınkiler "Haritalar"a, Kanallarım'ınkiler "YouTube"a (sabitli).
+- Metinde YouTube bağlantısı varsa not videonun kendi notuna (`yt_<videoId>`) satır olarak eklenir; `transcript`
+  (Kanallarım'ın tam altyazısı) o notun transkriptine gider (Notlar HAFIZA › Harita köprüsü).
 
 ## Dosya Okuyucu komutları (Faz 5)
 
