@@ -28,10 +28,11 @@ object NotlarSozleri {
         "^(?:not (?:al|et|yaz|düş)|nota (?:ekle|yaz|al))(?:ır mısın|ar mısın|abilir misin|ır mısınız)?(?=\\s|[:,.]|$)[\\s:,.-]*(.*)$",
         setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL),
     )
-    private const val RICA = "(?: lütfen)?(?:r mısın|ır mısın|ar mısın|abilir misin|ur musun|er misin)?(?: lütfen)?"
+    // "okur musun", "bulur musun", "arar mısın", "okuyabilir misin"
+    private const val RICA = "(?: lütfen)?(?:[ıiuüae]?r m[ıiuü]s[ıiuü]n|(?:y)?abilir misin|(?:y)?ebilir misin)?(?: lütfen)?"
     private val SONU_OKU = Regex("^(?:en )?son not(?:umu|um|u|unuz|unuzu)? ?(?:oku|söyle|ne|neydi|nedir|ne yazıyor)?$RICA$")
     private const val SAYI = "(bir|iki|üç|dört|beş|altı|yedi|sekiz|dokuz|on|\\d+)"
-    private val SON = Regex("^(?:en )?son (?:$SAYI )?not(?:lar)?(?:ım|ımı|ı|um|umu|larım|larımı|ları)? ?(?:oku|say|söyle|neler|ne|neler var|göster)?$RICA$")
+    private val SON = Regex("^(?:en )?son (?:$SAYI )?not(?:lar)?(?:ım|ımı|ı|u|um|umu|larım|larımı|ları)? ?(?:oku|say|söyle|neler|ne|neler var|göster)?$RICA$")
     private val ARA = listOf(
         // notlarımda X ara / notlarda X var mı / notlarımı X için ara
         Regex("^not(?:lar)?(?:ım)?(?:da|ı|ımı|ları)? (.+?)(?: için)? (?:ara|bul|var mı|geçiyor mu)$RICA$"),
@@ -42,7 +43,7 @@ object NotlarSozleri {
     )
     private val ATILAN = setOf("bir", "şu", "bu", "ile", "için", "ilgili", "benim", "tüm", "bütün", "olan")
     private val KESME = Regex("['’`]\\p{L}*$")
-    private val BELIRTME = Regex("(?<=\\p{L}{3})(?:y?[ıiuü]|n[ıiuü]n|[dt][ae]ki?|[dt][ae]n)$")
+    private val BELIRTME = Regex("(?<=\\p{L}{3})(?:[sy]?[ıiuü]|n[ıiuü]n|[dt][ae]ki?|[dt][ae]n)$")
 
     /** [raw]: uyanma sözü atılmış cümle (not metni büyük/küçük harfiyle kalsın). */
     fun parse(raw: String): Komut? {
