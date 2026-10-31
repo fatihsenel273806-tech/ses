@@ -23,6 +23,9 @@ import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.SpeakerPhone
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
+import com.ses.asistan.ayar.asistanGirisi // ASISTAN
+import com.ses.asistan.ayar.asistanSesi // ASISTAN
+import com.ses.asistan.ayar.asistanUyanmasi // ASISTAN
 import org.stypox.dicio.R
 import org.stypox.dicio.settings.datastore.InputDevice
 import org.stypox.dicio.settings.datastore.Language
@@ -108,6 +111,7 @@ fun inputDevice() = ListSetting(
     icon = Icons.Default.Mic,
     description = stringResource(R.string.pref_input_method_summary),
     possibleValues = listOf(
+        asistanGirisi(), // ASISTAN
         ListSetting.Value(
             value = InputDevice.INPUT_DEVICE_VOSK,
             name = stringResource(R.string.pref_input_method_vosk),
@@ -134,6 +138,7 @@ fun wakeDevice() = ListSetting(
     icon = Icons.Default.Hearing,
     description = stringResource(R.string.pref_wake_method_summary),
     possibleValues = listOf(
+        asistanUyanmasi(), // ASISTAN
         ListSetting.Value(
             value = WakeDevice.WAKE_DEVICE_OWW,
             name = stringResource(R.string.pref_wake_method_openwakeword),
@@ -151,6 +156,7 @@ fun speechOutputDevice() = ListSetting(
     icon = Icons.Default.SpeakerPhone,
     description = stringResource(R.string.pref_speech_output_method_summary),
     possibleValues = listOf(
+        asistanSesi(), // ASISTAN
         ListSetting.Value(
             value = SpeechOutputDevice.SPEECH_OUTPUT_DEVICE_ANDROID_TTS,
             name = stringResource(R.string.pref_speech_output_method_android),

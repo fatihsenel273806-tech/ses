@@ -9,12 +9,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import com.ses.asistan.ses.AsistanSpeechDevice // ASISTAN
 import org.dicio.skill.context.SpeechOutputDevice
 import org.stypox.dicio.io.speech.AndroidTtsSpeechDevice
 import org.stypox.dicio.io.speech.NothingSpeechDevice
 import org.stypox.dicio.io.speech.SnackbarSpeechDevice
 import org.stypox.dicio.io.speech.ToastSpeechDevice
 import org.stypox.dicio.settings.datastore.SpeechOutputDevice.SPEECH_OUTPUT_DEVICE_ANDROID_TTS
+import org.stypox.dicio.settings.datastore.SpeechOutputDevice.SPEECH_OUTPUT_DEVICE_ANTALIA
 import org.stypox.dicio.settings.datastore.SpeechOutputDevice.SPEECH_OUTPUT_DEVICE_NOTHING
 import org.stypox.dicio.settings.datastore.SpeechOutputDevice.SPEECH_OUTPUT_DEVICE_SNACKBAR
 import org.stypox.dicio.settings.datastore.SpeechOutputDevice.SPEECH_OUTPUT_DEVICE_TOAST
@@ -51,9 +53,11 @@ class SpeechOutputDeviceWrapper @Inject constructor(
                     //  SttInputDeviceWrapper works the same way
                     val prevDevice = wrappedSpeechDevice
                     wrappedSpeechDevice = when (setting) {
+                        // ASISTAN: varsayılan asistanın tek ses kuyruğu (Antalia, yedek Android TTS)
                         null,
                         UNRECOGNIZED,
                         SPEECH_OUTPUT_DEVICE_UNSET,
+                        SPEECH_OUTPUT_DEVICE_ANTALIA -> AsistanSpeechDevice(context)
                         SPEECH_OUTPUT_DEVICE_ANDROID_TTS -> AndroidTtsSpeechDevice(context, locale)
                         SPEECH_OUTPUT_DEVICE_NOTHING -> NothingSpeechDevice()
                         SPEECH_OUTPUT_DEVICE_TOAST -> ToastSpeechDevice(context)

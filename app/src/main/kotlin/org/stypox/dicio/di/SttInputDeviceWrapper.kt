@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
+import com.ses.asistan.giris.GoogleSttInputDevice // ASISTAN
 import org.stypox.dicio.R
 import org.stypox.dicio.io.input.InputEvent
 import org.stypox.dicio.io.input.SttInputDevice
@@ -26,6 +27,7 @@ import org.stypox.dicio.io.input.external_popup.ExternalPopupInputDevice
 import org.stypox.dicio.io.input.vosk.VoskInputDevice
 import org.stypox.dicio.settings.datastore.InputDevice
 import org.stypox.dicio.settings.datastore.InputDevice.INPUT_DEVICE_EXTERNAL_POPUP
+import org.stypox.dicio.settings.datastore.InputDevice.INPUT_DEVICE_GOOGLE
 import org.stypox.dicio.settings.datastore.InputDevice.INPUT_DEVICE_NOTHING
 import org.stypox.dicio.settings.datastore.InputDevice.INPUT_DEVICE_UNSET
 import org.stypox.dicio.settings.datastore.InputDevice.INPUT_DEVICE_VOSK
@@ -104,8 +106,10 @@ class SttInputDeviceWrapperImpl(
 
     private fun buildInputDevice(setting: InputDevice): SttInputDevice? {
         return when (setting) {
+            // ASISTAN: varsayılan Google tanıyıcısı; Dicio'nun Vosk'u çevrimdışı yedek
             UNRECOGNIZED,
             INPUT_DEVICE_UNSET,
+            INPUT_DEVICE_GOOGLE -> GoogleSttInputDevice(appContext)
             INPUT_DEVICE_VOSK -> VoskInputDevice(appContext, okHttpClient, localeManager, silencesBeforeStop)
             INPUT_DEVICE_EXTERNAL_POPUP ->
                 ExternalPopupInputDevice(appContext, activityForResultManager, localeManager)

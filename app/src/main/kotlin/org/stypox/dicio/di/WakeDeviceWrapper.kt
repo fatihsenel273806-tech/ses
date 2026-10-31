@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
+import com.ses.asistan.giris.VoskWakeDevice // ASISTAN
 import org.stypox.dicio.io.wake.WakeDevice
 import org.stypox.dicio.io.wake.WakeState
 import org.stypox.dicio.io.wake.oww.OpenWakeWordDevice
@@ -25,6 +26,7 @@ import org.stypox.dicio.settings.datastore.WakeDevice.UNRECOGNIZED
 import org.stypox.dicio.settings.datastore.WakeDevice.WAKE_DEVICE_NOTHING
 import org.stypox.dicio.settings.datastore.WakeDevice.WAKE_DEVICE_OWW
 import org.stypox.dicio.settings.datastore.WakeDevice.WAKE_DEVICE_UNSET
+import org.stypox.dicio.settings.datastore.WakeDevice.WAKE_DEVICE_VOSK
 import org.stypox.dicio.util.distinctUntilChangedBlockingFirst
 import javax.inject.Singleton
 
@@ -129,8 +131,10 @@ class WakeDeviceWrapperImpl(
 
     private fun buildInputDevice(setting: DataStoreWakeDevice): WakeDevice? {
         return when (setting) {
+            // ASISTAN: varsayılan Vosk dilbilgisi ("Hey Asistan", uygulama adları)
             UNRECOGNIZED,
             WAKE_DEVICE_UNSET,
+            WAKE_DEVICE_VOSK -> VoskWakeDevice(appContext, okHttpClient)
             WAKE_DEVICE_OWW -> OpenWakeWordDevice(appContext, okHttpClient)
             WAKE_DEVICE_NOTHING -> null
         }

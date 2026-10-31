@@ -35,6 +35,32 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
   `apt-get install openjdk-17-jdk-headless`, CI'da setup-java 17+21). Bulut oturumunda Maven Central 429 verebilir;
   çözüm yalnız oturuma özgü `~/.gradle/init.d/ayna.gradle` ile Google aynası
   (`maven-central.storage-download.googleapis.com/maven2`), depoya girmez. İlk tam derleme ~13 dk.
+- **2026-10-31 — K3: uyanma "araçta + elle"** (`UyanmaPolitikasi`). Araçta = Bluetooth ses aygıtı bağlı (ayarda araç
+  adı verildiyse yalnız o; ad `AudioDeviceInfo.productName`'den, izin gerekmez) ya da navigasyonda (Faz 3 `DURUM`).
+  Elle = ayardaki anahtar ya da bildirimdeki "Dinle / bırak". Kapalıyken WakeService çalışır ama `AudioRecord`
+  durur; koşul gelince aynı servisten yeniden başlar (telefonda doğrulanacak: arka planda kalmış mikrofon ön plan
+  servisinin kaydı yeniden başlatabilmesi).
+- **2026-10-31 — Faz 1 düzeni**: yeni kod `com.ses.asistan` (`ses/` saf mantık + Antalia + kuyruk, `giris/` Google
+  tanıma + Vosk uyanma, `ayar/`). Dicio'ya kancalar: üç proto değeri (`INPUT_DEVICE_GOOGLE`, `WAKE_DEVICE_VOSK`,
+  `SPEECH_OUTPUT_DEVICE_ANTALIA`; varsayılan = UNSET bunlara gider), üç sarmalayıcıda `when` dalı, `Definitions.kt`
+  seçenekleri, ayar ekranında `asistanAyarlari()`, `WakeService` döngüsünde `UyanmaKapisi.beklet` + bildirim
+  düğmesi. Manifest eki `app/src/asistan/AndroidManifest.xml` (debug/release kaynak kümesi), Türkçe uyanma metinleri
+  `app/src/asistan/res/values-tr`. Harita'nın JUnit 4 testleri `junit-vintage-engine` ile kotest'in yanında koşar.
+- **2026-10-31 — Uyanma adları ve ölçümü** (`tool/uyanma_olcum.py` → `app/src/test/resources/uyanma/` →
+  `WakeOlcumTest`). gTTS sesi; temiz, %15 hızlı, %10 yavaş, pembe gürültü (genlik 0,25, Harita'nınkinden ağır),
+  arkada video konuşması. 182 cümle × 5 = 910 kayıt, gerçek Vosk (Python, aynı model ve dilbilgisi) çıktısı Kotlin
+  `Decider`'a verilir:
+  - asistan: temiz 4/4, hızlı 3/4, yavaş 2/4, gürültü 0/4, arka 1/4
+  - harita: temiz 4/4, hızlı 4/4, yavaş 4/4, gürültü 0/4, arka 4/4
+  - notlar: temiz 4/4, hızlı 3/4, yavaş 1/4, gürültü 3/4, arka 0/4
+  - kanallar: temiz 4/4, hızlı 2/4, yavaş 4/4, gürültü 2/4, arka 3/4
+  - 830 olumsuz kayıtta 2 yanlış tetiklenme: hızlı "hey harika" → harita (Harita'nın kuralı, birebir), gürültüde
+    "ey nota" → notlar. Test yeni bir yanlış tetiklenmede kırılır.
+  Sonuç: temiz seste dört ad da güvenilir; gürültü ve arkada konuşmada zayıf (araç içi gerçek sesle telefonda
+  denenecek). Dilbilgisi değişince fikstür yeniden üretilir (`UYANMA_YAZ=1` + betik).
+- **2026-10-31 — Antalia portu doğrulandı**: gerçek ağırlıklarla JVM'de (`AntaliaBench`) üretilen "Kızılay'a 12
+  dakika kaldı, öndeki ışıkta bekleyeceksiniz." Vosk'ta kelimesi kelimesine tanındı. Bulut CPU'sunda 4 sn ses:
+  adım 8 → 6,9 sn, 4 → 4,2 sn, 2 → 2,6 sn (telefonda ayrıca ölçülür; varsayılan adım 4, akış parça parça çalar).
 
 ## Reddedilen / değişen yollar
 
@@ -49,6 +75,17 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
 - **Whisper (sherpa-onnx) ile canlı komut**: akış halinde çalışmıyor, pil ve CPU açısından ağır.
 - **Gemini raporundaki regex tablosu**: Türkçe eklerde kırılır ("annemi ara", "Ahmet'i arar mısın"); Dicio'nun
   Türkçe cümle dosyaları ekleri isteğe bağlı gruplarla karşılıyor (`şarkı<yı|ya?>`).
+
+- **"Hey Kanallarım" uyanma sözü**: Vosk küçük Türkçe modelinin sözlüğünde "kanallarım" (ve "asistanı",
+  "notlarım", "kanalım") yok; dilbilgisine verilen sözlük dışı kelime sessizce atılır
+  (`Ignoring word missing in vocabulary`). Kanallarım'ın uyanma adı "kanallar". Yeni ad eklemeden önce sözlük
+  denetlenir (tanıyıcı uyarı günlüğü). Harita'nın rakip listesindeki "haritacı", "hari", "arayı", "kanalıma" da
+  sözlükte yok (zararsız, birebir korundu).
+- **Yeni uyanma adlarında kısmi sonuçla karar**: kısmi sonuçta uzun süre "hey kanallar" görünüp son sonuçta
+  düzelen cümleler ("hey kanal", "ekmek alalım", arkada konuşmayla "sistem çöktü" → "hey asistan") yanlış
+  tetikliyordu. Yeni adlar yalnız son sonuçla karar verir; "harita" Harita'daki gibi kısmi sonuçla da (ölçülmüş).
+- **Ölçüm betiğinde geç bağlanan lambda** (bulundu, düzeltildi): Python'da döngüde kurulan `lambda: wav(..., ek)`
+  son `ek`'i kullanır; üç varyant da aynı (yavaş) sesle ölçülmüştü, "hey asistan" kaçıyor sanıldı. `lambda ek=ek:`.
 
 ## Taşınacak ses tuzakları (kanıtlı; kaynağı Harita/Notlar CLAUDE.md ve kodu)
 
@@ -75,7 +112,8 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
 - **Konuşurken kendi sesini duyma**: TTS konuşurken uyanma mikrofonu açık kalır ama duyulan atılır (`WakeWord.deaf`);
   yeniden başlatma yok.
 - **Telefon görüşmesi**: görüşme sürerken mikrofon görüşmenindir, uyanma beklemede. Durum yayını yalnız RINGING
-  değil OFFHOOK da verir.
+  değil OFFHOOK da verir. Asistanda yayın yerine ses kipi okunur (`AudioManager.mode` IN_CALL/IN_COMMUNICATION,
+  saniyede bir; READ_PHONE_STATE izni gerekmez; WhatsApp gibi internet aramalarını da yakalar).
 - **Mikrofon paylaşımı (Android 10+)**: iki uygulama aynı anda dinlerse sesi yalnız öndeki alır. Faz 3'e kadar Harita
   açıkken kendi "Hey Harita"sı mikrofonu alır, asistan sessizlik duyar (geçiş durumu).
 - **Açılışta mikrofon servisi** (Android 11+/15): `BOOT_COMPLETED`'tan mikrofon ön plan servisi başlatılamaz; Dicio

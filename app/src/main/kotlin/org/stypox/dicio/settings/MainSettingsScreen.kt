@@ -31,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ses.asistan.ayar.asistanAyarlari // ASISTAN
 import org.stypox.dicio.R
 import org.stypox.dicio.io.input.SttInputDevice
 import org.stypox.dicio.settings.datastore.InputDevice
@@ -127,7 +128,7 @@ private fun MainSettingsScreen(
             inputDevice().Render(
                 when (val inputDevice = settings.inputDevice) {
                     InputDevice.UNRECOGNIZED,
-                    InputDevice.INPUT_DEVICE_UNSET -> InputDevice.INPUT_DEVICE_VOSK
+                    InputDevice.INPUT_DEVICE_UNSET -> InputDevice.INPUT_DEVICE_GOOGLE // ASISTAN
                     else -> inputDevice
                 },
                 viewModel::setInputDevice,
@@ -135,7 +136,7 @@ private fun MainSettingsScreen(
         }
         val wakeDevice = when (val device = settings.wakeDevice) {
             WakeDevice.UNRECOGNIZED,
-            WakeDevice.WAKE_DEVICE_UNSET -> WakeDevice.WAKE_DEVICE_OWW
+            WakeDevice.WAKE_DEVICE_UNSET -> WakeDevice.WAKE_DEVICE_VOSK // ASISTAN
             else -> device
         }
         item {
@@ -172,12 +173,13 @@ private fun MainSettingsScreen(
                 when (val speechOutputDevice = settings.speechOutputDevice) {
                     SpeechOutputDevice.UNRECOGNIZED,
                     SpeechOutputDevice.SPEECH_OUTPUT_DEVICE_UNSET ->
-                        SpeechOutputDevice.SPEECH_OUTPUT_DEVICE_ANDROID_TTS
+                        SpeechOutputDevice.SPEECH_OUTPUT_DEVICE_ANTALIA // ASISTAN
                     else -> speechOutputDevice
                 },
                 viewModel::setSpeechOutputDevice,
             )
         }
+        asistanAyarlari() // ASISTAN: ses ve uyanma (com.ses.asistan.ayar)
         item {
             sttPlaySound().Render(
                 when (val sttPlaySound = settings.sttPlaySound) {

@@ -29,6 +29,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import com.ses.asistan.giris.ElleDinleAlici // ASISTAN
+import com.ses.asistan.giris.UyanmaKapisi // ASISTAN
 import org.stypox.dicio.MainActivity
 import org.stypox.dicio.MainActivity.Companion.ACTION_WAKE_WORD
 import org.stypox.dicio.R
@@ -180,6 +182,8 @@ class WakeService : Service() {
                     PendingIntent.FLAG_IMMUTABLE,
                 ),
             ))
+            // ASISTAN: K3 elle dinleme düğmesi
+            .let { ElleDinleAlici.dugmeEkle(this, it) }
             .build()
 
         startForeground(FOREGROUND_NOTIFICATION_ID, notification)
@@ -201,6 +205,11 @@ class WakeService : Service() {
         try {
             ar.startRecording()
             while (listening.get()) {
+                // ASISTAN: Google tanıyıcısına mikrofon devri, K3 politikası, görüşme
+                if (UyanmaKapisi.beklet(this, ar)) {
+                    lastHeard.set(Instant.now())
+                    continue
+                }
                 if (audio.size != wakeDevice.frameSize()) {
                     audio = ShortArray(wakeDevice.frameSize())
                 }
@@ -218,6 +227,7 @@ class WakeService : Service() {
         } finally {
             ar.stop()
             ar.release()
+            UyanmaKapisi.bitti() // ASISTAN
         }
     }
 

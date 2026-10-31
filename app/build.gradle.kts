@@ -69,8 +69,10 @@ android {
 
     // ASISTAN: derleme türü kaynak kümeleri main'in kaynaklarını ezer (Dicio dosyasına dokunmadan)
     sourceSets {
-        getByName("debug").res.srcDir("src/asistan/res")
-        getByName("release").res.srcDir("src/asistan/res")
+        for (tur in listOf("debug", "release")) {
+            getByName(tur).res.srcDir("src/asistan/res")
+            getByName(tur).manifest.srcFile("src/asistan/AndroidManifest.xml")
+        }
     }
 
     compileOptions {
@@ -213,6 +215,10 @@ dependencies {
     testImplementation(libs.kotest.runner.junit5)
     testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.kotest.property)
+    // ASISTAN: Harita'dan taşınan JUnit 4 testleri kotest'in yanında koşsun; org.json JVM testinde gerçek olsun
+    testImplementation("junit:junit:4.13.2")
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.13.4")
+    testImplementation("org.json:json:20250517")
     androidTestImplementation(libs.test.runner)
     androidTestImplementation(libs.test.rules)
     androidTestImplementation(libs.test.ui.automator)

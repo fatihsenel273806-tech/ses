@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Asistan: Dicio'nun manifestiyle birleşir (debug ve release kaynak kümeleri); Dicio dosyasına dokunulmaz -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- K3 elle dinleme: uyanma bildirimindeki "Dinle / bırak" düğmesi -->
+        <receiver
+            android:name="com.ses.asistan.giris.ElleDinleAlici"
+            android:exported="false" />
+    </application>
+</manifest>
