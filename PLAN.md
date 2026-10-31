@@ -11,7 +11,7 @@ Dosya Okuyucu) kendi ses özellikleriyle devam eder; onlardaki asistan köprüs�
 | 2 | Köprü protokolü + Kanallarım becerisi (Kanallarım'da değişiklik yok) | 🟨 telefonda deneme bekliyor |
 | 3 | Harita geçişi: ses asistanda, yönlendirme mantığı Harita'da | 🟨 telefonda ölçüm bekliyor; Harita'nın kendi ses kodu ölçümden sonra silinir |
 | 4 | Notlar köprüsü (yalnız kişisel derleme) | 🟨 telefonda deneme bekliyor |
-| 5 | Dosya Okuyucu köprüsü (yalnız kişisel derleme) | ⬜ |
+| 5 | Dosya Okuyucu köprüsü (yalnız kişisel derleme) | 🟨 asistan tarafı main'de; Dosya Okuyucu yaması push izni bekliyor (`yamalar/`), sesli oku/özet K7 |
 | 6 | Beyin: Gemini yedek beceri, bağlı uygulamaların araçları, konuşma belleği | ⬜ |
 | 7 | İsteğe bağlı: openWakeWord, araç/Bluetooth düğmesi, varsayılan asistan, Dicio güncellemeleri | ⬜ |
 
@@ -219,10 +219,19 @@ mikrofon ─► │ Uyanma: Vosk dilbilgisi ("hey asistan", "hey harita", "hey n
   dokunulmadı. Telefonda denenecek: kişisel APK `kisisel` sürümünden, Notlar'da başlıkta `[kisisel]` ile derlenir.)
 
 ### Faz 5 — Dosya Okuyucu köprüsü (yalnız kişisel derleme)
-- [ ] Köprü Kotlin'i `ci/` yaması olarak (`prepare_android.sh`), kişisel bayrakla; `tool/check_kotlin.sh` koşulur.
-- [ ] Komutlar: "X dosyasını aç", "son dosyayı aç", "sesli oku / durdur" (uygulamanın kendi `tts_service`'i),
-  "özetle" (uygulamanın Gemini'si; cevap asistana `SÖYLE` ile).
-- [ ] Bitti sayılır: Faz 4 ile aynı denetim (genel APK'da köprü yok).
+- [x] Köprü Kotlin'i `ci/` yaması olarak (`prepare_android.sh`), kişisel bayrakla; `tool/check_kotlin.sh` koşulur.
+  (`ci/kisisel/AsistanKopru.kt`, `DOSYA_KISISEL=1`; CI'da elle `kisisel: true`, o koşu Release yayınlamaz. Arama/kapsam
+  `Ajan.kt`'den `ci/DosyaArama.kt`'ye taşındı. `check_kotlin.sh` gerçek jar'la temiz. **Dosya Okuyucu'ya bu oturumda
+  push izni verilmedi** (yalnız okuma): commit `yamalar/dosya-okuyucu-faz5.patch`'te; o depoda `git am` ile
+  uygulanıp `main`'e push edilir — açık iş, aşağıda.)
+- [x] Komutlar, asistan tarafı: `beceri/DosyalarSozleri` (JVM testli) + `DosyalarBecerisi`; protokole `KOMUT`(107) /
+  `SONUÇ`(9) eklendi (`Kopru.komut`, cevaptaki PendingIntent'i asistan açar). "X dosyasını aç" ve "son dosyayı aç"
+  uçtan uca yazıldı.
+- [ ] "Sesli oku / durdur" (uygulamanın kendi `TtsService`'i) ve "özetle" (uygulamanın Gemini'si): Dosya Okuyucu'da
+  ikisi de görüntüleyici ekranının Dart durumunda; asistandan başlatmak için Dart'ta kanca gerekir → **K7 (açık)**.
+  O zamana kadar köprü "henüz bağlı değil" der.
+- [ ] Bitti sayılır: Faz 4 ile aynı denetim (genel APK'da köprü yok). (Denetim `prepare_android.sh`'te yazıldı;
+  yama uygulanıp CI'da koşunca ve telefonda kişisel APK'da "dosyasını aç" denenince.)
 
 ### Faz 6 — Beyin
 - [ ] Gemini yedek becerisi: Dicio'nun yedek becerisinin önüne geçer. Araçlar bağlı uygulamaların
@@ -253,6 +262,16 @@ mikrofon ─► │ Uyanma: Vosk dilbilgisi ("hey asistan", "hey harita", "hey n
   onlarla beraber çalışsın, boşta durmuş olur"): K3'ün yanına dördüncü kip.
 - [ ] **K5** (Faz 7) Uyanma motoru: Vosk dilbilgisi mi openWakeWord mü (ölçümle). (Kullanıcı 2026-10-31: ölçüm
   bulutta yapılamadığı için şimdilik Vosk kalır; telefon ölçümü bekleyen madde olarak durur.)
+- [ ] **K7** (Faz 5, açık — kullanıcıya sorulacak) Dosya Okuyucu'da "sesli oku / durdur / özetle" asistandan
+  başlatılsın mı? Gereken: Dosya Okuyucu'nun **Dart** koduna (görüntüleyici) küçük bir kanca — ör. `oku:`/`ozet:`
+  bağlantısı ve açık görüntüleyicinin sesli okumasını başlatıp durduran bir dinleyici; kişisel derlemenin köprüsü
+  bunu tetikler. Kanca genel APK'da da bulunur ama etkisizdir (tetikleyen köprü yok). D5 "kendi ses özelliklerine
+  dokunulmaz" der: `TtsService`'in kendisi değişmez, yalnız başlatılır. Seçenekler: (a) kanca eklensin (öneri),
+  (b) yalnız "aç" kalsın.
+- [ ] **Açık iş (Faz 5)**: Dosya Okuyucu'ya push izni. `yamalar/dosya-okuyucu-faz5.patch` o depoda
+  `git am` ile uygulanır, `bash tool/check_kotlin.sh` + CI yeşil, `main`'e push. Sonra telefondaki Dosya Okuyucu
+  kişisel APK'yla (CI elle, `kisisel: true`) güncellenir; asistan izni tanımlayan uygulamadan önce kurulduysa
+  asistan yeniden kurulur (PROTOKOL tuzağı).
 - [x] **K6** (Faz 7) Asistan varsayılan dijital asistan olsun mu? **Karar (2026-10-31): evet.** Gemini'nin yerini
   alır; uygulamalardaki Gemini AppFunctions'ı etkilenmez.
 

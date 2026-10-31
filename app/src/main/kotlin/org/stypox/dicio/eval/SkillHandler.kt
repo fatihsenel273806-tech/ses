@@ -34,6 +34,7 @@ import org.stypox.dicio.skills.joke.JokeInfo
 import org.stypox.dicio.skills.flashlight.FlashlightInfo
 import com.ses.asistan.beceri.KanallarInfo // ASISTAN
 import com.ses.asistan.beceri.NotlarInfo // ASISTAN
+import com.ses.asistan.beceri.DosyalarInfo // ASISTAN
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -62,6 +63,7 @@ class SkillHandler @Inject constructor(
         FlashlightInfo,
         KanallarInfo, // ASISTAN
         NotlarInfo, // ASISTAN
+        DosyalarInfo, // ASISTAN
     )
 
     private val fallbackSkillInfoList = listOf(

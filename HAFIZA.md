@@ -113,6 +113,26 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
   sdkmanager `platforms;android-37.0`'ı `android-37.0` klasörüne kuruyor, AGP `android-37` arıyor → yalnız oturumda
   `ln -s android-37.0 android-37`.
 
+- **2026-10-31 — Faz 5: Dosya Okuyucu köprüsü** (bağlı servis, yalnız kişisel derleme). Dosya Okuyucu'nun PLAN'da
+  varsayılan parçaları gerçekten var: `ci/prepare_android.sh`, `tool/check_kotlin.sh`, `ci/Ajan.kt` (Gemini
+  AppFunctions: `recentFiles`/`searchFiles`/`openFile`, AI kapsamı `AjanKapsam`), `Extras.linkIntent` (`file:`/`app:`
+  bağlantısıyla açan PendingIntent). Yapılan: asistan `KOMUT`(107) → uygulama `SONUÇ`(9) (`replyTo`; Dosya Okuyucu
+  asistanın ses servisine bağlanmadığı için sertifikası gerekmiyor); `Kopru.komut` cevabı bekler, `pi`'yi açar. Köprü
+  `ci/kisisel/AsistanKopru.kt`, bayrak `DOSYA_KISISEL=1`; arama/kapsam `ci/DosyaArama.kt`'ye taşındı (Ajan ile ortak,
+  davranış aynı). Sürüm 1 kaldı (ekler; eski uygulamalar bilinmeyen `what`'ı yok sayar). **Sesli oku / özet
+  bağlanmadı**: Dosya Okuyucu'nun sesli okuması (`TtsService`) ve özeti görüntüleyici ekranının Dart durumunda
+  (`viewer_screen.dart` `_tts`, `reader_screen.dart`); Kotlin'den başlatılamaz, Dart kancası gerekir → PLAN K7 (açık).
+  Cümleler `DosyalarSozleri`: "dosya/belge/pdf…" sözcüğü şart (yoksa "haritayı aç", "son notumu oku" buraya düşerdi).
+- **2026-10-31 — Bu oturumda Dosya Okuyucu'ya push izni verilmedi** (`add_repo` push reddedildi; okuma açık depo
+  olarak var). İş yerel commit olarak `yamalar/dosya-okuyucu-faz5.patch`'te: o depoda `git am`, `tool/check_kotlin.sh`
+  (`ANDROID_ALL_JAR` ile), push. Yama yalnız Dosya Okuyucu için yazılmış yeni koddur; bu deponun (GPL) kodundan
+  türetilmedi.
+- **Bulut derleme tuzağı (init betiği)**: `settingsEvaluated` Dicio'nun settings eklentisini (`includegit`, jgit) çözmek
+  için geç kalıyor — Central 429. Ayna `beforeSettings`'te `buildscript` ve `pluginManagement` depolarının önüne;
+  `r.maven{}` depoyu zaten ekler, `add(0, …)` yinelenen ad hatası verir (önce `remove`). Dicio
+  `FAIL_ON_PROJECT_REPOS` kullandığı için proje depolarına ayna eklenmez. Kotlin denetimi için kotlinc
+  (`github.com/JetBrains/kotlin/releases`) ve Robolectric `android-all` jar'ı Google aynasından iner.
+
 ## Reddedilen / değişen yollar
 
 - **Ortak kütüphane (her uygulamaya giren Kotlin AAR + Flutter eklentisi)** — 2026-10-31 sabah planlandı, aynı gün
@@ -175,6 +195,11 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
 - 2026-10-31 sürüm 1 (`PROTOKOL.md`). Asistan ve Harita uyguluyor. Dosya Okuyucu Faz 5'te: kendi iznini
   (`<paket>.izin.ASISTAN`, knownCerts = asistan) tanımlar, asistan manifestine `uses-permission` ve
   `kopru_sertifikalari`'na sertifikası eklenir.
+- 2026-10-31 "KOMUT/SONUÇ" (Faz 5; sürüm 1 kaldı, ek iletiler): asistan → uygulama `KOMUT` (107: `kimlik`, `ad`,
+  `sorgu`), uygulama → asistan `SONUÇ` (9: `kimlik`, `metin`, `tamam`, `pi`). İzin
+  `com.dosyaokuyucu.dosya_okuyucu.izin.ASISTAN` (knownCerts: asistan). Değişen: asistan (`Kopru.komut`,
+  `uses-permission`, Dosyalar becerisi), Dosya Okuyucu (kişisel köprü; yama `yamalar/`'da). Harita, Kanallarım, Notlar
+  etkilenmez.
 - 2026-10-31 "Notlar yayınları" (Faz 4; sürüm değişmedi, Messenger kanalına dokunulmadı): `HARITA_NOT` +
   `ASISTAN_SORGU`, izin `dev.kaimau.notlar.izin.ASISTAN` (knownCerts: asistan, Harita, Kanallarım). Değişen:
   Notlar (kişisel kaynak kümesi), asistan (`uses-permission`, Notlar becerisi), Harita ve Kanallarım (`uses-permission`).

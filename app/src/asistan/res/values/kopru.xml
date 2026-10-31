@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Köprü: asistanın ses servisine bağlanabilecek uygulamaların imza sertifikaları (SHA-256, PROTOKOL.md).
-     Notlar ve Dosya Okuyucu'nunkiler Faz 4/5'te eklenir (anahtarları o depoların Secrets'ında; telefondaki APK'dan
-     apksigner ile ile okunur). -->
+     Notlar (yayınla konuşur) ve Dosya Okuyucu (KOMUT'a replyTo ile cevap verir) ses servisine bağlanmadığı için
+     sertifikaları gerekmiyor; bağlanmaları gerekirse buraya eklenir. -->
 <resources>
     <string-array name="kopru_sertifikalari" translatable="false">
         <!-- Harita Ankara (app/debug.keystore) -->

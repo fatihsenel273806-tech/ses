@@ -16,6 +16,8 @@
     <uses-permission android:name="com.harita.ankara.izin.ASISTAN" />
     <!-- Notlar'ın kişisel derlemesindeki yayın alıcısı ("not al", "son notum", "notlarımda ara"; PROTOKOL.md) -->
     <uses-permission android:name="dev.kaimau.notlar.izin.ASISTAN" />
+    <!-- Dosya Okuyucu'nun kişisel derlemesindeki köprü servisi ("X dosyasını aç", "sesli oku", "özetle"; PROTOKOL.md) -->
+    <uses-permission android:name="com.dosyaokuyucu.dosya_okuyucu.izin.ASISTAN" />
     <!-- "Hey Harita, …" Harita kapalıyken haritayı açabilsin (arka plandan ekran açma; ayarlardan verilir) -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- "İlgili uygulamalar açıkken" dinleme: önde hangi uygulama var (ayarlardan verilir, OndekiUygulama.kt) -->

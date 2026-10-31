@@ -34,6 +34,11 @@ object Protokol {
     const val AC = 7
     /** Dinleme ya da dikte sürüyorsa bırakılır (uygulama kendi kartını kapattı). */
     const val DINLEME_IPTAL = 8
+    /**
+     * [KOMUT]'un cevabı: [KIMLIK], [METIN_ALANI] (asistan söyler), [TAMAM] ve isteğe bağlı [PENDING_INTENT] (asistan
+     * ekranı açar). Uzun işin sonucu (özet) ayrıca [SOYLE] ile gelebilir.
+     */
+    const val SONUC = 9
 
     // ------------------------------------------------------------------ asistan → uygulama
     /**
@@ -50,6 +55,8 @@ object Protokol {
     const val DIKTE_SONUC = 105
     /** Dinlerken canlı metin: [METIN_ALANI] (uygulama kendi kartında gösterir). */
     const val KISMI = 106
+    /** Yapılandırılmış komut (Dosya Okuyucu): [KIMLIK], [KOMUT_AD], [SORGU]. Cevap [SONUC]. */
+    const val KOMUT = 107
 
     // ------------------------------------------------------------------ alanlar
     const val SURUM_ALANI = "surum"
@@ -65,6 +72,9 @@ object Protokol {
     const val ANAHTAR = "anahtar"
     const val DEGER = "deger"
     const val PENDING_INTENT = "pi"
+    const val KOMUT_AD = "ad"
+    const val SORGU = "sorgu"
+    const val TAMAM = "tamam"
 
     // ------------------------------------------------------------------ ses sınıfları (SpeechQueue.Kind)
     const val T_TALIMAT = "talimat"

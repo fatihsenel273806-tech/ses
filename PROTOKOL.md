@@ -33,6 +33,7 @@ Dört uygulama farklı anahtarla imzalı olduğu için `signature` izni işe yar
 | `com.ses.asistan.izin.SES` | asistan | Harita, Kanallarım (Dosya Okuyucu Faz 5; Notlar'ın gerekmiyor, yayınla konuşur) | asistanın ses servisi |
 | `com.harita.ankara.izin.ASISTAN` | Harita | asistan | Harita'nın köprü servisi |
 | `dev.kaimau.notlar.izin.ASISTAN` | Notlar (yalnız kişisel derleme) | asistan, Harita, Kanallarım | Notlar'ın yayın alıcısı |
+| `com.dosyaokuyucu.dosya_okuyucu.izin.ASISTAN` | Dosya Okuyucu (yalnız kişisel derleme) | asistan | Dosya Okuyucu'nun köprü servisi |
 
 Sertifikalar (SHA-256, iki nokta üst üste olmadan, küçük harf):
 
@@ -42,7 +43,7 @@ Sertifikalar (SHA-256, iki nokta üst üste olmadan, küçük harf):
 | Harita (`app/debug.keystore`) | `d03a97662ef327430eae1debfd7632c29deacd156a146f0e9bc7236177b3359c` |
 | Kanallarım (`app/sabit.keystore`) | `ccfa3c3353148fb89f2d6860c2359e15498c64022c910d75fbc5b2483d70a1c7` |
 | Notlar | gerekmiyor (asistana bağlanmıyor); kişisel CI işi `apksigner verify --print-certs` ile yazdırır |
-| Dosya Okuyucu | anahtar Secrets'ta; Faz 5'te telefondaki APK'dan `apksigner verify --print-certs` ile |
+| Dosya Okuyucu | gerekmiyor (asistanın ses servisine bağlanmıyor; `SONUÇ`'u `replyTo` ile verir) |
 
 Tuzak: izni kullanan uygulama, izni tanımlayan uygulamadan önce kurulduysa ve köprü çalışmıyorsa kullanan uygulama
 yeniden kurulur.
@@ -69,6 +70,7 @@ yeniden kurulur.
 | 6 | DURUM | `anahtar`, `deger` (Boolean) | `navigasyon`, `onde`, `uyanma` |
 | 7 | AÇ | `pi` (PendingIntent) | asistan ekranı açar (arka plandan) |
 | 8 | DİNLEME_İPTAL | — | bu uygulama için süren dinleme/dikte bırakılır |
+| 9 | SONUÇ | `kimlik`, `metin`, `tamam` (Boolean), `pi` (ops. PendingIntent) | `KOMUT`'un cevabı; `metin`'i asistan söyler, `pi` varsa ekranı açar |
 
 ### Asistan → uygulama
 
@@ -80,6 +82,7 @@ yeniden kurulur.
 | 104 | DUYULMADI | — | `DİNLE`'de bir şey duyulmadı |
 | 105 | DİKTE_SONUÇ | `kimlik`, `metin` (null: iptal ya da boş) | |
 | 106 | KISMI | `metin` | dinlerken canlı metin |
+| 107 | KOMUT | `kimlik`, `ad`, `sorgu` | yapılandırılmış komut (`ses_yetenekler.xml`'deki `komut` adları); cevap `SONUÇ`. Asistan 10 sn (özet 45 sn) bekler |
 
 ### Ses sınıfları (`tur`)
 
@@ -131,6 +134,20 @@ Notlar öne gelmez, Flutter motoru açılmaz: alıcı uygulamanın Firebase Andr
 - Klasör adıyla bulunur (büyük/küçük harf duyarsız), yoksa açılır. Asistanın aldığı notlar "Asistan" klasörüne,
   Harita'nınkiler "Haritalar"a, Kanallarım'ınkiler "YouTube"a (sabitli).
 - Kanallarım'ın `transcript` eki şimdilik yok sayılır (Notlar'da tam transkript/AI düzeltme yolu yok).
+
+## Dosya Okuyucu komutları (Faz 5)
+
+Dosya Okuyucu'nun köprü servisi yalnız **kişisel** derlemesinde var (`DOSYA_KISISEL=1 bash ci/prepare_android.sh`,
+`ci/kisisel/`); genel APK'da yoktur (betik manifesti denetler), asistan "kişisel sürümü kurulu değil" der.
+`devir="hayir"`: serbest metin verilmez; asistan cümleyi kendisi çözer (`DosyalarSozleri`) ve `KOMUT` yollar.
+Servis iletiyi gönderenin paketini de denetler (yalnız `com.ses.asistan`).
+
+| `ad` | `sorgu` | Uygulamada |
+|---|---|---|
+| `ac` | dosya adında geçecek söz; boş: son açılan | MediaStore ad araması (Gemini işlevleriyle aynı AI kapsamı: kilitli ve AI dışı klasörler dönmez), en yenisi; `pi` = `file:` bağlantısı |
+| `oku` | boş ya da dosya adı | uygulamanın kendi sesli okuması (`TtsService`) — **henüz bağlı değil** (PLAN K7) |
+| `durdur` | — | sesli okumayı durdurur — **henüz bağlı değil** (K7) |
+| `ozetle` | boş ya da dosya adı | uygulamanın Gemini'siyle özet; uzun sonuç `SÖYLE(cevap)` ile de gelebilir — **henüz bağlı değil** (K7) |
 
 ## Değişiklik kuralı
 

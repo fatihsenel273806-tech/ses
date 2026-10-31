@@ -20,7 +20,10 @@ import com.ses.asistan.ses.Ses
 import com.ses.asistan.ses.SesDurumu
 import com.ses.asistan.ses.SpeechQueue
 import com.ses.asistan.yonlendirme.Yonlendirme
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Bağlı uygulamalarla konuşan taraf (PROTOKOL.md). Gelen iletiler kendi iş parçacığında işlenir (paket adı, XML
@@ -31,6 +34,7 @@ import java.util.concurrent.ConcurrentHashMap
  *  - `DİNLE`/`DİKTE`'de duyulan doğrudan o uygulamaya gider (Dicio becerilerine uğramaz).
  *  - Uygulama kapalıyken metin devri: asistan uygulamanın köprü servisine bağlanır, `METİN`'i verir; uygulama ekran
  *    açmak isterse `AÇ` ile PendingIntent yollar.
+ *  - Yapılandırılmış komut (Dosya Okuyucu): `KOMUT` aynı yoldan gider, uygulama `SONUÇ` ile cevaplar ([komut]).
  */
 object Kopru {
     private const val TAG = "Kopru"
@@ -53,6 +57,13 @@ object Kopru {
     private val baglilar = ConcurrentHashMap<String, Bagli>()
     /** Şu an kimin için dinleniyor (`DİNLE`/`DİKTE`); null: asistanın kendisi. */
     @Volatile private var dinleyen: String? = null
+
+    /** Cevabı beklenen `KOMUT`lar: kimlik → (paket, cevap). */
+    private val bekleyen = ConcurrentHashMap<Int, Pair<String, CompletableDeferred<Sonuc>>>()
+    private val sonKimlik = AtomicInteger()
+
+    /** `SONUÇ`: [metin] asistan söyler; [tamam] false ise iş olmadı (metin nedenini söyler). */
+    class Sonuc(val metin: String, val tamam: Boolean)
 
     /** Uyanma dinlemesi hazır mı ([SesServisi] Dicio'nun uyanma aygıtından günceller). */
     @Volatile var uyanmaHazir = false
@@ -116,6 +127,15 @@ object Kopru {
             Protokol.DINLEME_IPTAL -> main.post { if (dinleyen == paket) { Kulak.al(app).iptal(); dinleyen = null } }
             Protokol.DURUM -> durum(paket, d.getString(Protokol.ANAHTAR), d.getBoolean(Protokol.DEGER))
             Protokol.AC -> @Suppress("DEPRECATION") (d.getParcelable<PendingIntent>(Protokol.PENDING_INTENT))?.let { ac(it) }
+            Protokol.SONUC -> {
+                val kimlik = d.getInt(Protokol.KIMLIK)
+                // başka uygulama başkasının komutunu cevaplayamaz
+                val (beklenen, k) = bekleyen[kimlik]?.takeIf { it.first == paket } ?: return
+                bekleyen.remove(kimlik)
+                @Suppress("DEPRECATION") (d.getParcelable<PendingIntent>(Protokol.PENDING_INTENT))?.let { ac(it) }
+                Log.d(TAG, "$beklenen: komut $kimlik cevaplandı")
+                k.complete(Sonuc(d.getString(Protokol.METIN_ALANI).orEmpty(), d.getBoolean(Protokol.TAMAM)))
+            }
         }
     }
 
@@ -213,13 +233,40 @@ object Kopru {
      * Metin devri: bağlıysa doğrudan, değilse uygulamanın köprü servisine bağlanılıp verilir (uygulama kapalıyken;
      * ekranı `AÇ` ile kendisi açtırır). false: uygulamaya ulaşılamadı (kurulu değil, izin yok).
      */
-    fun metinVer(paket: String, metin: String, uyanma: Boolean): Boolean {
-        baglilar[paket]?.let { b -> if (runCatching { b.messenger.send(metinIletisi(metin, uyanma)) }.isSuccess) return true }
+    fun metinVer(paket: String, metin: String, uyanma: Boolean): Boolean = ulas(paket) { metinIletisi(metin, uyanma) }
+
+    /**
+     * Yapılandırılmış komut: uygulamanın köprüsüne `KOMUT` gider, `SONUÇ` beklenir (ekran açılacaksa asistan açar).
+     * null: uygulamaya ulaşılamadı ya da [sureMs] içinde cevap gelmedi. Ana iş parçacığında çağrılmaz (keşif XML okur).
+     */
+    suspend fun komut(paket: String, ad: String, sorgu: String, sureMs: Long = 10_000L): Sonuc? {
+        val kimlik = sonKimlik.incrementAndGet()
+        val k = CompletableDeferred<Sonuc>()
+        bekleyen[kimlik] = paket to k
+        try {
+            val gitti = ulas(paket) {
+                Message.obtain(null, Protokol.KOMUT).apply {
+                    data = Bundle().apply {
+                        putInt(Protokol.KIMLIK, kimlik); putString(Protokol.KOMUT_AD, ad); putString(Protokol.SORGU, sorgu)
+                    }
+                    replyTo = gelen
+                }
+            }
+            return if (gitti) withTimeoutOrNull(sureMs) { k.await() } else null
+        } finally {
+            bekleyen.remove(kimlik)
+        }
+    }
+
+    /** İletiyi bağlıysa doğrudan, değilse uygulamanın köprü servisine bağlanıp verir. false: ulaşılamadı. */
+    private fun ulas(paket: String, ileti: () -> Message): Boolean {
+        baglilar[paket]?.let { b -> if (runCatching { b.messenger.send(ileti()) }.isSuccess) return true }
+        if (!::app.isInitialized) return false
         val y = Uygulamalar.bul(app, paket) ?: return false
         val conn = object : ServiceConnection {
             override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
-                val ok = binder != null && runCatching { Messenger(binder).send(metinIletisi(metin, uyanma)) }.isSuccess
-                if (!ok) Log.w(TAG, "$paket köprüsüne metin verilemedi")
+                val ok = binder != null && runCatching { Messenger(binder).send(ileti()) }.isSuccess
+                if (!ok) Log.w(TAG, "$paket köprüsüne ileti verilemedi")
                 main.postDelayed({ runCatching { app.unbindService(this) } }, BIRAK_MS)
             }
 
