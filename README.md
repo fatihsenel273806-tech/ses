@@ -1,21 +1,14 @@
-# ses
+# Asistan
 
-Android uygulamaları için ortak Türkçe ses kütüphanesi: uyanma sözü, konuşma tanıma, kesintisiz dikte,
-seslendirme, ses işaretleri, Türkçe dil araçları ve niyet motoru. Kotlin'de yazılır; Flutter uygulamalar aynı
-kodu `flutter/ses_asistan` eklentisi üzerinden kullanır.
+Kişisel merkezi Türkçe sesli asistan: "Hey Asistan" (ve "Hey Harita", "Hey Notlar" gibi uygulama adları) ile
+uyanır, Google tanıyıcısıyla dinler, Antalia sesiyle konuşur. Komutu bağlı uygulamalara (Harita, Kanallarım,
+Notlar, Dosya Okuyucu) iletir.
 
-Durum: **planlama** (Faz 0 henüz yapılmadı). Mimari, fazlar ve kararlar için bkz. [`PLAN.md`](PLAN.md).
+[Dicio](https://github.com/DicioTeam/dicio-android) sesli asistanının çatalıdır (fork). Dicio'nun yazarlarına
+teşekkürler.
 
-## Modüller (planlanan)
-
-| Modül | İçerik |
-|---|---|
-| `cekirdek` | Saf Kotlin: Türkçe normalleştirme ve ek temizliği, sayılar, dikte kuralları, uyanma dilbilgisi, ses kuyruğu, niyet motoru |
-| `kulak` | Android `SpeechRecognizer`: tek komut, kesintisiz dikte, bip susturma |
-| `uyanma` | Cihazda uyanma sözü (Vosk + dilbilgisi); ses odağı almaz |
-| `agiz` | Seslendirme: Antalia (cihazda Türkçe) + Android TTS yedeği, ses işaretleri |
-| `flutter/ses_asistan` | Flutter eklentisi (Android'de yukarıdaki modüller) |
+Durum: **planlama**. Dicio kodu Faz 0'da gelecek. Mimari, fazlar ve kararlar için bkz. [`PLAN.md`](PLAN.md).
 
 ## Lisans
 
-Apache-2.0, bkz. [`LICENSE`](LICENSE).
+GPL-3.0 (Dicio ile aynı), bkz. [`LICENSE`](LICENSE).

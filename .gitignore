@@ -6,11 +6,6 @@ local.properties
 .idea/
 .kotlin/
 
-# Flutter
-.dart_tool/
-flutter/**/.flutter-plugins*
-flutter/**/pubspec.lock
-
 # Modeller çalışma anında iner, depoya girmez
 *.mdl
 *.onnx

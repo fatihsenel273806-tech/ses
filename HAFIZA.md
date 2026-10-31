@@ -1,32 +1,38 @@
-# HAFIZA — ses
+# HAFIZA — Asistan (ses deposu)
 
 Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural güncellenir; tarih yazılır.
 
 ## Kararlar
 
-- **2026-10-31 — Ayrı depo, açık, Apache-2.0, adı `ses`** (K1, K2). Gerekçe: dört uygulama, iki dil (Kotlin, Flutter);
-  aynı Türkçe seslendirme (Antalia) iki kez yazılmıştı (Harita'da saf Kotlin 1.095 satır, Notlar'da Dart + ONNX
-  2.308 satır). Google tanıyıcısının aynı tuzakları da iki uygulamada ayrı ayrı çözülmüştü. Açık depo: JitPack ve
-  pub git anahtarsız çalışır, CI'lara sır eklenmez (Dosya Okuyucu başka hesapta: `kaimau1`).
-- **2026-10-31 — Önce kütüphane, merkezi asistan uygulaması değil** (K3). Her uygulama kütüphaneyi kendi içinde
-  kullanır. Merkezi uygulama (tek "Hey Asistan") isteğe bağlı Faz 6 olarak kütüphanenin üstüne kurulur.
-- **2026-10-31 — Açık metin Google tanıyıcısında kalır; Vosk yalnız dilbilgisiyle** (uyanma + çevrimdışı sabit
-  komutlar). Vosk küçük Türkçe modeli (`vosk-model-small-tr-0.3`) açık uçlu metinde (yer adı, not) zayıf.
+- **2026-10-31 — Merkezi asistan uygulaması, Dicio çatalı** (PLAN D1, D2). Kullanıcı: "Bunu sadece ben kullanacağım,
+  ayrı merkezi asistan uygulaması olarak yapalım baştan ve hepsine oradan bağlı olsun." Uygulama kişisel olduğu için
+  Dicio'nun GPL-3.0 lisansı yükümlülük getirmiyor; depo lisansı GPL-3.0. Dicio: Kotlin + Compose + Hilt, 245 Kotlin
+  dosyası / ~21 bin satır (2026-10-23, `3d1c154`). Türkçe cümle dosyaları var (`app/src/main/sentences/tr`).
+  Tanıma (`SttInputDevice`), uyanma (`WakeDevice`) ve ses çıkışı (`SpeechOutputDevice`) arayüz olduğu için Google
+  tanıma, Vosk uyanma ve Antalia buraya yeni parça olarak takılır.
+- **2026-10-31 — Harita'nın yönlendirme sesi: mantık Harita'da, ses asistanda** (D3). Tek ses kuyruğu: asistanın cevabı
+  dönüş talimatının üstüne binmez. Asistana ulaşılamazsa Harita Android sesine düşer.
+- **2026-10-31 — Uyanma: "Hey Asistan" + uygulama adları** (D4), tek Vosk dilbilgisinde. Her söz ayrı ölçülür.
+- **2026-10-31 — Notlar ve Dosya Okuyucu dağıtılacak** (D5): kendi ses özellikleri korunur, asistan köprüsü yalnız
+  kişisel derlemede. Bu depodan onlara kod kopyalanmaz (GPL); bağlantı süreçler arası.
+- **2026-10-31 — Açık metin Google tanıyıcısında, Vosk yalnız dilbilgisiyle** (uyanma; Dicio'nun Vosk tanıması
+  çevrimdışı yedek). Vosk küçük Türkçe modeli (`vosk-model-small-tr-0.3`) açık uçlu metinde (yer adı, not) zayıf.
 
-## Reddedilen yollar
+## Reddedilen / değişen yollar
 
-- **Dicio'yu almak** (Gemini araştırmasının ana önerisi, 2026-10-31): GPL-3.0 (kullanan uygulamaları GPL yapar).
-  Uyanma sözü İngilizce openWakeWord modeli; Türkçe söz için model eğitmek gerekir. Harita'nın Vosk uyanması zaten
-  ölçülmüş durumda. Hazır yetenekleri (fener, alarm, hesap makinesi) bu uygulamaların işi değil.
-- **Uygulamalar arası AppFunctions ile merkezi asistan**: `EXECUTE_APP_FUNCTIONS` izni çoğu Android 16 cihazında
-  yalnız sistem uygulamalarına veriliyor. Normal bir uygulama başka uygulamanın AppFunctions'ını çağıramaz
-  (kendi işlevleri serbest). Telefonda doğrulamak için: `adb shell pm list permissions -f | grep -A3 EXECUTE_APP_FUNCTIONS`.
-  Köprü gerekirse `knownSigner` korumalı izinle yayın kullanılır (dört uygulama farklı anahtarla imzalı, signature
-  izni işe yaramaz).
+- **Ortak kütüphane (her uygulamaya giren Kotlin AAR + Flutter eklentisi)** — 2026-10-31 sabah planlandı, aynı gün
+  merkezi uygulama kararıyla bırakıldı. Gerekçe: kullanıcı tek asistan istiyor; dağıtılan iki uygulama zaten kendi
+  sesiyle devam edecek, ortak kütüphanenin en büyük kazancı (Notlar'daki tekrarı bitirmek) o yüzden gerekmiyor.
+  Depo o plana göre açık + Apache-2.0 açılmıştı; şimdi lisans GPL-3.0, görünürlük PLAN K1.
+- **Uygulamalar arası AppFunctions**: `EXECUTE_APP_FUNCTIONS` izni çoğu Android 16 cihazında yalnız sistem
+  uygulamalarına veriliyor; normal bir uygulama başka uygulamanın işlevini çağıramaz (kendi işlevleri serbest).
+  Doğrulamak için: `adb shell pm list permissions -f | grep -A3 EXECUTE_APP_FUNCTIONS`. Yerine köprü protokolü
+  (`signature|knownSigner` izinli bağlı servis); dört uygulama farklı anahtarla imzalı, signature izni işe yaramaz.
 - **Whisper (sherpa-onnx) ile canlı komut**: akış halinde çalışmıyor, pil ve CPU açısından ağır.
-- **Gemini raporundaki regex tablosu**: Türkçe eklerde kırılır ("annemi ara", "Ahmet'i arar mısın").
+- **Gemini raporundaki regex tablosu**: Türkçe eklerde kırılır ("annemi ara", "Ahmet'i arar mısın"); Dicio'nun
+  Türkçe cümle dosyaları ekleri isteğe bağlı gruplarla karşılıyor (`şarkı<yı|ya?>`).
 
-## Taşınacak tuzaklar (kanıtlı; kaynağı uygulamanın CLAUDE.md/HAFIZA'sı)
+## Taşınacak ses tuzakları (kanıtlı; kaynağı Harita/Notlar CLAUDE.md ve kodu)
 
 - **Google tanıyıcısı uzun oturumu desteklemez** (Xiaomi, `com.google.android.tts`): `EXTRA_SEGMENTED_SESSION` yok
   sayılır, oturum ~8,6 sn'de "konuşma yok" ile biter. Sessizlik süresi ayarlarını da yok sayar, ilk kısa
@@ -52,9 +58,11 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
   yeniden başlatma yok.
 - **Telefon görüşmesi**: görüşme sürerken mikrofon görüşmenindir, uyanma beklemede. Durum yayını yalnız RINGING
   değil OFFHOOK da verir.
-- **Mikrofon paylaşımı (Android 10+)**: iki uygulama aynı anda dinlerse sesi yalnız öndeki alır. Uygulama başına
-  "Hey X" ancak o uygulama açıkken çalışır.
+- **Mikrofon paylaşımı (Android 10+)**: iki uygulama aynı anda dinlerse sesi yalnız öndeki alır. Faz 3'e kadar Harita
+  açıkken kendi "Hey Harita"sı mikrofonu alır, asistan sessizlik duyar (geçiş durumu).
+- **Açılışta mikrofon servisi** (Android 11+/15): `BOOT_COMPLETED`'tan mikrofon ön plan servisi başlatılamaz; Dicio
+  "başlatmak için dokun" bildirimi gösteriyor (`BootBroadcastReceiver`).
 
-## Kırıcı değişiklikler
+## Köprü protokolü değişiklikleri
 
-(henüz sürüm yok)
+(henüz yok; `PROTOKOL.md` Faz 2'de yazılır. Mesaj ya da izin değişirse hangi uygulamada neyin değişeceği buraya.)
