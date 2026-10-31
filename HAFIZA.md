@@ -108,7 +108,10 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
   manifestine `dev.kaimau.notlar.izin.ASISTAN` eklendi (izni tanımlayan Notlar sonra kurulursa onlar yeniden kurulur).
 - **Derleme tuzağı (bulut, Flutter)**: Flutter'ın `flutter_tools/gradle` dahil derlemesinin `pluginManagement`'ı boş;
   init betiği oraya yalnız aynayı koyarsa Gradle varsayılan eklenti portalını kaybeder (`kotlin-dsl` bulunamaz). Boşsa
-  önce `gradlePluginPortal()` + `google()` eklenir. Flutter 3.44.6 `/opt/flutter`, NDK 28.2 ilk derlemede iner.
+  önce `gradlePluginPortal()` + `google()` eklenir; eklenti portalı kullanan projelerde (Dicio'nun `sentences-compiler-plugin`'i)
+  ayna proje depolarının da en önüne. Flutter 3.44.6 `/opt/flutter`, NDK 28.2 ilk derlemede iner. Notlar compileSdk 37:
+  sdkmanager `platforms;android-37.0`'ı `android-37.0` klasörüne kuruyor, AGP `android-37` arıyor → yalnız oturumda
+  `ln -s android-37.0 android-37`.
 
 ## Reddedilen / değişen yollar
 
