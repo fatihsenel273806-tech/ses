@@ -17,6 +17,20 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
   kişisel derlemede. Bu depodan onlara kod kopyalanmaz (GPL); bağlantı süreçler arası.
 - **2026-10-31 — Açık metin Google tanıyıcısında, Vosk yalnız dilbilgisiyle** (uyanma; Dicio'nun Vosk tanıması
   çevrimdışı yedek). Vosk küçük Türkçe modeli (`vosk-model-small-tr-0.3`) açık uçlu metinde (yer adı, not) zayıf.
+- **2026-10-31 — K1: depo açık, imza anahtarı depoda** (`app/asistan.keystore`, parola `android`, takma ad
+  `asistan`). Kullanıcı: "Hem açık olsun hem de keystore olsun, çok önemli bir proje değil." Her CI sürümü aynı
+  anahtarla imzalanır, telefonda öncekinin üzerine kurulur. Sertifika (köprü `knownCerts`'i için):
+  SHA-256 `9f9ba7d6e0465f41e500744010cdb5e8428a09a5ec6d6e33ccd6510ff4209551`,
+  SHA-1 `dff3aac966843201ab290c71b220e3591bceb488`. Anahtar değişirse telefondaki uygulama kaldırılıp kurulur ve
+  bağlı uygulamalardaki `knownCerts` güncellenir; o yüzden değiştirilmez.
+- **2026-10-31 — K2: kimlik `com.ses.asistan`, ad "Asistan"**. `namespace` Dicio'nunki (`org.stypox.dicio`) kalır
+  (kod paketleri değişmez, birleştirme kolay). Ad ve simge `app/src/asistan/res`'ten gelir; bu klasör debug ve
+  release kaynak kümelerine eklenir, derleme türü kaynakları main'i ezdiği için Dicio dosyasına dokunulmaz.
+- **2026-10-31 — Derleme (Faz 0)**: Dicio'nun ana dalı `master` değil `main`. Sürüm kodu `GITHUB_RUN_NUMBER`
+  (yerelde 1; yerel derleme telefondaki CI sürümünün üzerine kurulmaz, önce kaldırmak gerekir). Dal adına göre
+  kimlik/ad soneki (Dicio `gitBranch()`) kaldırıldı. CI: `apk.yml` (JDK 21, testler → release → imza denetimi →
+  `son-surum`); Dicio'nun `ci.yml`'si yalnız elle. Bulutta SDK: `/opt/android-sdk` (cmdline-tools, platform 36,
+  build-tools 35), `local.properties`'te `sdk.dir`.
 
 ## Reddedilen / değişen yollar
 

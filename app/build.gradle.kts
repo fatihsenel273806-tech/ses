@@ -1,4 +1,3 @@
-import org.eclipse.jgit.api.Git
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.stypox.dicio.unicodeCldrPlugin.UnicodeCldrLanguagesTask
 
@@ -30,11 +29,12 @@ android {
     compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
-        applicationId = "org.stypox.dicio"
+        // ASISTAN: kimlik Dicio'dan ayrı (K2); sürüm kodu CI çalıştırma numarası (yoksa 1)
+        applicationId = "com.ses.asistan"
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
-        versionCode = 19
-        versionName = "4.2"
+        versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
+        versionName = "4.2-asistan"
         testInstrumentationRunner = "org.stypox.dicio.CustomTestRunner"
 
         vectorDrawables.useSupportLibrary = true
@@ -44,23 +44,33 @@ android {
         }
     }
 
+    // ASISTAN: depodaki sabit anahtar (app/asistan.keystore): her sürüm öncekinin üzerine kurulur.
+    // Sertifika SHA-256'sı HAFIZA'da (köprü izinlerinin knownCerts'i bununla yazılır).
+    signingConfigs {
+        create("asistan") {
+            storeFile = file("asistan.keystore")
+            storePassword = "android"
+            keyAlias = "asistan"
+            keyPassword = "android"
+        }
+    }
+
+    // ASISTAN: dal adına göre kimlik/ad soneki kaldırıldı; ad ve simge src/asistan/res'ten gelir
     buildTypes {
         debug {
-            var normalizedGitBranch = gitBranch().replaceFirst("^[^A-Za-z]+", "").replace(Regex("[^0-9A-Za-z]+"), "")
-            applicationIdSuffix = ".$normalizedGitBranch"
-            versionNameSuffix = "-$normalizedGitBranch"
-
-            val isScreenshotTest = (project.findProperty("android.testInstrumentationRunnerArguments.class") as? String)
-                ?.contains("creenshot") == true
-            if (!isScreenshotTest) {
-                // only change the app name if we are not taking screenshots
-                resValue("string", "app_name", "Dicio-${gitBranch()}")
-            }
+            signingConfig = signingConfigs.getByName("asistan")
         }
         release {
+            signingConfig = signingConfigs.getByName("asistan")
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
+    }
+
+    // ASISTAN: derleme türü kaynak kümeleri main'in kaynaklarını ezer (Dicio dosyasına dokunmadan)
+    sourceSets {
+        getByName("debug").res.srcDir("src/asistan/res")
+        getByName("release").res.srcDir("src/asistan/res")
     }
 
     compileOptions {
@@ -214,8 +224,4 @@ configurations.configureEach {
     resolutionStrategy {
         force(libs.test.core)
     }
-}
-
-fun gitBranch(): String {
-    return Git.open(rootDir).use { it.repository.branch }
 }

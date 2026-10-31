@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Asistan: Dicio'nun adını ezer (debug ve release kaynak kümeleri) -->
+<resources>
+    <string name="app_name" translatable="false">Asistan</string>
+</resources>

@@ -1,0 +1,64 @@
+name: APK
+
+# Asistan: main'e push'ta (uygulama/derleme dosyaları değişince) ya da elle. Önce JVM birim testleri; kırmızıysa
+# "son-surum" güncellenmez, kırık sürüm telefona gitmez. APK her zaman aynı anahtarla imzalanır
+# (app/asistan.keystore): yeni sürüm öncekinin üzerine kurulur, ayarlar ve indirilen modeller kalır.
+# Sürüm kodu = çalıştırma numarası (her derleme bir öncekinden büyük).
+on:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "skill/**"
+      - "sentences-compiler-plugin/**"
+      - "unicode-cldr-plugin/**"
+      - "gradle/**"
+      - "*.gradle.kts"
+      - "gradle.properties"
+      - ".github/workflows/apk.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      # Dicio Java 21 ister (runner'ın varsayılanı 17); Android SDK runner'da hazır
+      - uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: temurin
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Birim testleri
+        run: ./gradlew testDebugUnitTest --console=plain
+
+      - name: APK derle (release, sabit imza)
+        run: ./gradlew assembleRelease --console=plain
+
+      - name: İmzayı denetle
+        run: |
+          APKSIGNER="$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -n 1)apksigner"
+          "$APKSIGNER" verify --print-certs app/build/outputs/apk/release/app-release.apk | tee imza.txt
+          grep -qi "9f9ba7d6e0465f41e500744010cdb5e8428a09a5ec6d6e33ccd6510ff4209551" imza.txt
+
+      - name: GitHub Release (son sürüm)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk Asistan.apk
+          gh release delete son-surum --cleanup-tag --yes || true
+          gh release create son-surum Asistan.apk \
+            --target "$GITHUB_SHA" --latest \
+            --title "Son sürüm #${{ github.run_number }}" \
+            --notes "Dal: ${GITHUB_REF_NAME} · commit ${GITHUB_SHA::7} · Telefona Asistan.apk dosyasını indirip kurun; önceki sürümün üzerine kurulur, ayarlar korunur."

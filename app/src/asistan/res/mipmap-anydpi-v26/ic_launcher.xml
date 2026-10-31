@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Asistan simgesi: Dicio'nun ic_launcher'ını ezer (Android 8+; daha eskisinde Dicio'nun PNG'si kalır) -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/asistan_simge_arka" />
+    <foreground android:drawable="@drawable/asistan_simge_on" />
+    <monochrome android:drawable="@drawable/asistan_simge_on" />
+</adaptive-icon>

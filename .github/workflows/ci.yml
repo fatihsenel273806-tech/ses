@@ -1,27 +1,8 @@
 name: Continuous integration
 
+# ASISTAN: Dicio'nun CI'ı yalnız elle çalışır; push'ta derleme + son-surum apk.yml'de
 on:
   workflow_dispatch:
-  pull_request:
-    branches:
-      - main
-    paths-ignore:
-      - 'README.md'
-      - 'fastlane/**'
-      - 'meta/**'
-      - '.github/**/*.md'
-      - '.github/FUNDING.yml'
-      - '.github/ISSUE_TEMPLATE/**'
-  push:
-    branches:
-      - main
-    paths-ignore:
-      - 'README.md'
-      - 'fastlane/**'
-      - 'meta/**'
-      - '.github/**/*.md'
-      - '.github/FUNDING.yml'
-      - '.github/ISSUE_TEMPLATE/**'
 
 jobs:
   build-and-test-jvm:

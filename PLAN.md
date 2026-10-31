@@ -6,7 +6,7 @@ Dosya Okuyucu) kendi ses özellikleriyle devam eder; onlardaki asistan köprüs�
 
 | Faz | İçerik | Durum |
 |---|---|---|
-| 0 | Çatal: Dicio içe aktarılır, ad/kimlik, CI, telefonda Türkçe çalışıyor | ⬜ |
+| 0 | Çatal: Dicio içe aktarılır, ad/kimlik, CI, telefonda Türkçe çalışıyor | 🟨 telefonda deneme bekliyor |
 | 1 | Ses çekirdeği: Google tanıma + dikte, Vosk uyanma (çok söz), Antalia + tek ses kuyruğu | ⬜ |
 | 2 | Köprü protokolü + Kanallarım becerisi (Kanallarım'da değişiklik yok) | ⬜ |
 | 3 | Harita geçişi: ses asistanda, yönlendirme mantığı Harita'da | ⬜ |
@@ -124,13 +124,14 @@ mikrofon ─► │ Uyanma: Vosk dilbilgisi ("hey asistan", "hey harita", "hey n
 ## 6. Fazlar
 
 ### Faz 0 — Çatal ve iskelet
-- [ ] KARAR K1 (görünürlük) ve K2 (kimlik/ad) sorulur.
-- [ ] Dicio geçmişiyle içe aktarılır: `git remote add upstream https://github.com/DicioTeam/dicio-android`,
-  `git merge --allow-unrelated-histories upstream/master`. Bu depodaki belgeler korunur; çakışan README birleştirilir.
-- [ ] Uygulama kimliği (`applicationId`, ad, simge) değişir; dal adına göre sonek ekleyen derleme kuralı sadeleşir.
-- [ ] CI: push'ta imzalı APK → Release `son-surum` (diğer depolardaki düzen); sürüm kodu = çalıştırma numarası. İmza
-  anahtarı depo açıksa Secrets'ta, özelse diğer depolar gibi depoda.
-- [ ] Bulut oturumunda derleme (`/opt/android-sdk`, `local.properties`). Dicio derlemede iki git bağımlılığını
+- [x] KARAR K1 (görünürlük) ve K2 (kimlik/ad) sorulur. (K1: açık + anahtar depoda; K2: `com.ses.asistan`, "Asistan")
+- [x] Dicio geçmişiyle içe aktarılır: `git remote add upstream https://github.com/DicioTeam/dicio-android`,
+  `git merge --allow-unrelated-histories upstream/main` (Dicio'nun ana dalı `main`, `3d1c154`). Bu depodaki belgeler korunur; çakışan README birleştirilir.
+- [x] Uygulama kimliği (`applicationId`, ad, simge) değişir; dal adına göre sonek ekleyen derleme kuralı sadeleşir.
+- [x] CI: push'ta imzalı APK → Release `son-surum` (diğer depolardaki düzen); sürüm kodu = çalıştırma numarası. İmza
+  anahtarı depo açıksa Secrets'ta, özelse diğer depolar gibi depoda. (K1 gereği depoda: `app/asistan.keystore`,
+  `.github/workflows/apk.yml`; Dicio'nun `ci.yml`'si yalnız elle.)
+- [x] Bulut oturumunda derleme (`/opt/android-sdk`, `local.properties`). Dicio derlemede iki git bağımlılığını
   (`dicio-numbers`, `dicio-sentences-compiler`) indirir; ağ izni gerekir.
 - [ ] Bitti sayılır: APK telefonda kurulu, Türkçe seçiliyken Dicio'nun kendi becerileri (saat, zamanlayıcı,
   hesap) sesle çalışıyor.
@@ -218,10 +219,11 @@ mikrofon ─► │ Uyanma: Vosk dilbilgisi ("hey asistan", "hey harita", "hey n
 
 ## 7. Açık kararlar
 
-- [ ] **K1** (Faz 0) Depo görünürlüğü. **Öneri: özel.** Kişisel uygulama, uygulamalara özel beceriler içerecek;
+- [x] **K1** (Faz 0) Depo görünürlüğü. **Karar (2026-10-31): açık kalır, imza anahtarı yine de depoda**
+  (kullanıcı: "çok önemli bir proje değil"). Eski öneri: **Öneri: özel.** Kişisel uygulama, uygulamalara özel beceriler içerecek;
   imza anahtarı diğer depolardaki gibi tutulabilir. Açık kalırsa GPL kaynak yayını sorunsuzdur ama anahtar
   Secrets'a taşınır. Değişikliği GitHub ayarlarından siz yaparsınız.
-- [ ] **K2** (Faz 0) Uygulama kimliği ve adı. Öneri: `com.ses.asistan`, "Asistan".
+- [x] **K2** (Faz 0) Uygulama kimliği ve adı. **Karar: `com.ses.asistan`, "Asistan".**
 - [ ] **K3** (Faz 1) Uyanma ne zaman açık: her zaman / araçta (araç Bluetooth'u bağlı ya da Harita navigasyonda)
   + elle / yalnız elle. Öneri: araçta + elle. Sürekli dinleme pil yer; Faz 1 ölçümüne göre karar verilir.
 - [ ] **K4** (Faz 4) Köprünün dağıtılan APK'dan çıkışı: Gradle ürün çeşidi (`kisisel`/`genel`) ya da derleme
