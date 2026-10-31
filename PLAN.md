@@ -8,8 +8,8 @@ Dosya Okuyucu) kendi ses özellikleriyle devam eder; onlardaki asistan köprüs�
 |---|---|---|
 | 0 | Çatal: Dicio içe aktarılır, ad/kimlik, CI, telefonda Türkçe çalışıyor | 🟨 telefonda deneme bekliyor |
 | 1 | Ses çekirdeği: Google tanıma + dikte, Vosk uyanma (çok söz), Antalia + tek ses kuyruğu | 🟨 telefonda ölçüm bekliyor |
-| 2 | Köprü protokolü + Kanallarım becerisi (Kanallarım'da değişiklik yok) | ⬜ |
-| 3 | Harita geçişi: ses asistanda, yönlendirme mantığı Harita'da | ⬜ |
+| 2 | Köprü protokolü + Kanallarım becerisi (Kanallarım'da değişiklik yok) | 🟨 telefonda deneme bekliyor |
+| 3 | Harita geçişi: ses asistanda, yönlendirme mantığı Harita'da | 🟨 telefonda ölçüm bekliyor; Harita'nın kendi ses kodu ölçümden sonra silinir |
 | 4 | Notlar köprüsü (yalnız kişisel derleme) | ⬜ |
 | 5 | Dosya Okuyucu köprüsü (yalnız kişisel derleme) | ⬜ |
 | 6 | Beyin: Gemini yedek beceri, bağlı uygulamaların araçları, konuşma belleği | ⬜ |
@@ -163,24 +163,29 @@ mikrofon ─► │ Uyanma: Vosk dilbilgisi ("hey asistan", "hey harita", "hey n
   - dikte cümle arasında kesilmiyor.
 
 ### Faz 2 — Köprü protokolü + Kanallarım
-- [ ] `PROTOKOL.md` (§3 kesinleşir) ve asistan tarafı: keşif, bağlı servis, izinler, `knownCerts` (dört sertifika
-  SHA-256'sı toplanır; Harita: `d03a9766…359c`).
-- [ ] Yönlendirme sırası (§1) ve uyanma adıyla doğrudan yönlendirme.
-- [ ] **Kanallarım becerisi**: Harita `Media.kt` (MediaBrowser, oturum komutu) ve `MediaWords` (sarma, baştan,
+- [x] `PROTOKOL.md` (§3 kesinleşir) ve asistan tarafı: keşif, bağlı servis, izinler, `knownCerts` (dört sertifika
+  SHA-256'sı toplanır; Harita: `d03a9766…359c`). (`kopru/`; Harita ve Kanallarım sertifikaları depolardaki
+  anahtarlardan. Notlar ve Dosya Okuyucu'nunkiler Secrets'ta: Faz 4/5'te telefondaki APK'dan alınır.)
+- [x] Yönlendirme sırası (§1) ve uyanma adıyla doğrudan yönlendirme. (`yonlendirme/`, SkillEvaluator'da iki
+  `// ASISTAN:` kancası; uygulama adıyla uyanınca asistanın ekranı açılmaz.)
+- [x] **Kanallarım becerisi**: Harita `Media.kt` (MediaBrowser, oturum komutu) ve `MediaWords` (sarma, baştan,
   ne çalıyor, son izlenenler, harita listesi, adıyla video/liste açma, videoya not) asistana taşınır. Dicio'nun
-  genel medya becerisi kalır; Kanallarım çalarken bizimki öne geçer.
+  genel medya becerisi kalır; Kanallarım çalarken bizimki öne geçer. (`beceri/`: KanallarSozleri, Kanallar,
+  KanallarBecerisi, liste okunup "ikinci"/adıyla seçilir; Harita `MediaWordsTest` taşındı, yeşil.)
 - [ ] Bitti sayılır: Kanallarım deposuna dokunulmadan "Hey Kanallar, geri sar" (uyanma adı "kanallar", bkz. HAFIZA), "ne çalıyor", "X videosunu aç"
   ve "videoya not al" çalışıyor (not Notlar'a ulaşıyor).
 
 ### Faz 3 — Harita geçişi
-- [ ] Harita'da köprü servisi + `ses_yetenekler.xml`: `METIN` → `interpret`; `offer` seçenekleri `SOR` ile
-  (cevabı asistan dinler); navigasyon başladı/bitti `DURUM` ile.
-- [ ] Harita açılınca asistana `BIND_INCLUDE_CAPABILITIES` ile bağlanır; asistan hiç açılmadan dinlemeye başlar
-  (§5). Asistan kurulu değilse ya da bağlanamazsa Harita'nın mikrofon düğmesi asistanı açar.
-- [ ] Yönlendirme sesi `SÖYLE(tür = talimat|uyarı)` ile asistana gider. Bayat talimat kuralı korunur: asistan
-  okuyamadan bayatlarsa `Navigator.restate` karşılığını Harita'dan ister. Asistana ulaşılamazsa Harita'daki
-  Android TTS'e düşer.
-- [ ] Harita'dan kalkanlar: `WakeWord`, `WakeGrammar`, `Ears` (dikte), `Dictation`, Vosk + JNA bağımlılıkları,
+- [x] Harita'da köprü servisi + `ses_yetenekler.xml`: `METIN` → `interpret`; `offer` seçenekleri `SOR` ile
+  (cevabı asistan dinler); navigasyon başladı/bitti `DURUM` ile. (`AssistantBridge.kt`, `AssistantBridgeService.kt`;
+  `SOR` ayrı ileti olmadı: Harita soruyu `SÖYLE` ile okutur, cevabı `DİNLE` ile alır, "ikinci"yi kendisi anlar.)
+- [x] Harita açılınca asistana `BIND_INCLUDE_CAPABILITIES` ile bağlanır; asistan hiç açılmadan dinlemeye başlar
+  (§5). Asistan kurulu değilse ya da bağlanamazsa Harita kendi dinlemesiyle sürer (mikrofon düğmesi dahil).
+- [x] Yönlendirme sesi `SÖYLE(tür = talimat|uyarı)` ile asistana gider. Bayat talimat kuralı korunur: asistan
+  okuyamadan bayatlarsa `SÖYLENDİ(bayat)` döner, Harita `Navigator.restate` ile tazesini yollar. Asistana
+  ulaşılamazsa (ya da bağlantı koparsa) Harita'nın kendi sesine düşer; bekleyen cümle orada yeniden okunur.
+- [ ] Harita'dan kalkanlar (**ölçüm geçince**; §8 "ölçüm geçmeden Harita'dan ses kodu silinmez"; şimdilik asistan
+  yokken yedek yol olarak duruyor, bağlıyken çalışmıyor): `WakeWord`, `WakeGrammar`, `Ears` (dikte), `Dictation`, Vosk + JNA bağımlılıkları,
   `tts/` (Antalia), `VoicePicker`, `MediaWords`, `NoteBridge`'in sesli dikte kısmı. Kalanlar: mikrofon düğmesi
   (asistana "dinle" der), medya çubuğu (`MediaBar`, görsel), Android TTS yedeği. `CLAUDE.md`'deki ses tuzakları
   bu deponun HAFIZA'sına işaret eder.
@@ -233,6 +238,8 @@ mikrofon ─► │ Uyanma: Vosk dilbilgisi ("hey asistan", "hey harita", "hey n
   + elle / yalnız elle. Öneri: araçta + elle. Sürekli dinleme pil yer; Faz 1 ölçümüne göre karar verilir.
 - [ ] **K4** (Faz 4) Köprünün dağıtılan APK'dan çıkışı: Gradle ürün çeşidi (`kisisel`/`genel`) ya da derleme
   bayrağı. İki uygulamada aynı yöntem kullanılır.
+- [x] **Uyanma kipi "İlgili uygulamalar açıkken"** (kullanıcı 2026-10-31: "ilgili uygulamalar açıkken seçeneği olsun,
+  onlarla beraber çalışsın, boşta durmuş olur"): K3'ün yanına dördüncü kip.
 - [ ] **K5** (Faz 7) Uyanma motoru: Vosk dilbilgisi mi openWakeWord mü (ölçümle).
 - [ ] **K6** (Faz 7) Asistan varsayılan dijital asistan olsun mu? O zaman Gemini'nin yerini alır; uygulamalardaki
   Gemini AppFunctions'ı etkilenmez.

@@ -80,10 +80,10 @@ class KanallarBecerisi(private val zorla: Boolean) : Skill<Komut?>(KanallarInfo,
         }
     }
 
-    /** Harita listesi, son izlenenler, indirilenler ve oynatma listelerinde adıyla; en iyi eşleşen kaldığı yerden çalar. */
+    /** Harita listesi, son izlenenler, indirilenler, favoriler ve oynatma listelerinde adıyla; en iyi eşleşen kaldığı yerden çalar. */
     private suspend fun bul(k: Kanallar, ad: String): SkillOutput {
         val found = ArrayList<MediaBrowser.MediaItem>()
-        for (p in listOf("map", "recent", "dl", "pl")) found += k.cocuklar(p)
+        for (p in listOf("map", "recent", "dl", "fav", "pl")) found += k.cocuklar(p)
         val titles = found.map { it.description.title?.toString().orEmpty() }
         val i = KanallarSozleri.best(ad, titles)
         if (i < 0) return Cikti("Kanallarım'da “$ad” bulunamadı.")

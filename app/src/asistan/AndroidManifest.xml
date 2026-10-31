@@ -16,6 +16,10 @@
     <uses-permission android:name="com.harita.ankara.izin.ASISTAN" />
     <!-- "Hey Harita, …" Harita kapalıyken haritayı açabilsin (arka plandan ekran açma; ayarlardan verilir) -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- "İlgili uygulamalar açıkken" dinleme: önde hangi uygulama var (ayarlardan verilir, OndekiUygulama.kt) -->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
 
     <application>
         <!-- K3 elle dinleme: uyanma bildirimindeki "Dinle / bırak" düğmesi -->

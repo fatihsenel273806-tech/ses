@@ -71,6 +71,23 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
   bağlı (`// ASISTAN:` MainActivity); ayarlarda "Uyanma şu an" satırı nedeni söyler (model inmedi / mikrofon izni yok /
   servis çalışmıyor / araçta değil / Bluetooth adı eşleşmiyor). Telefonda önce bu satıra bakılır.
 
+- **2026-10-31 — Faz 2/3 düzeni (köprü)**. Asistan: `kopru/` (Protokol, Uygulamalar keşfi, Kopru, SesServisi),
+  `yonlendirme/` (saf karar + SkillEvaluator kancası), `beceri/` (Kanallarım, devir). Harita: `AssistantBridge`
+  (bağlantı), `AssistantBridgeService` (Harita kapalıyken `AÇ` → `AgentEntry`), `Voice.speakAs`/`Ears` içinde
+  köprüye devir; Harita'nın geri kalanı değişmedi (`say`, `navSpeak`, `offer` aynı). Bağlıyken: ses asistanda (tek
+  kuyruk), dinleme/dikte asistanda, "Hey Harita" asistanda (Harita'nın Vosk'u kapalı). Asistan yoksa/koparsa Harita'nın
+  eski yolu birebir. Harita'nın kendi ses kodu (WakeWord, Ears dikte, Antalia, MediaWords) telefonda ölçüm geçince
+  silinecek (PLAN §8). İki tarafın sesi çift çalmasın: bağlıyken Harita "dinliyorum/anladım" işaretini çalmaz
+  (asistanın Kulak'ı çalıyor), uyarı işaretini Harita kendisi çalar (`isaret=false`).
+- **2026-10-31 — Uyanma kipi "İlgili uygulamalar açıkken"** (kullanıcı isteği). Harita köprüden `onde` bildirir;
+  Kanallarım'a dokunulmadığı için onun (ve Notlar, Dosya Okuyucu) önde olduğu kullanım erişimiyle
+  (`PACKAGE_USAGE_STATS`, ayarlardan verilir, `OndekiUygulama`) anlaşılır. Kip sırası ordinal saklanıyor: yeni kip sona.
+  Doğrulanacak: arka planda kalmış mikrofon ön plan servisinin `AudioRecord`'u yeniden başlatabilmesi (uygulama
+  açılınca kayıt yeniden başlıyor).
+- **Derleme tuzağı (bulut, Harita)**: Dicio için gereken "aynayı eklenti depolarının en önüne koy" init betiği
+  Harita'da AGP eklentisini bulunamaz yapıyor; Harita'da yalnız Central adresini aynaya çevirmek yetiyor
+  (init betiği kök yola göre ayırıyor). Harita compileSdk 37: `platforms;android-37.0`.
+
 ## Reddedilen / değişen yollar
 
 - **Ortak kütüphane (her uygulamaya giren Kotlin AAR + Flutter eklentisi)** — 2026-10-31 sabah planlandı, aynı gün
@@ -130,4 +147,6 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
 
 ## Köprü protokolü değişiklikleri
 
-(henüz yok; `PROTOKOL.md` Faz 2'de yazılır. Mesaj ya da izin değişirse hangi uygulamada neyin değişeceği buraya.)
+- 2026-10-31 sürüm 1 (`PROTOKOL.md`). Asistan ve Harita uyguluyor. Notlar ve Dosya Okuyucu Faz 4/5'te: kendi
+  izinlerini (`<paket>.izin.ASISTAN`, knownCerts = asistan) tanımlar, asistan manifestine `uses-permission` ve
+  `kopru_sertifikalari`'na sertifikaları eklenir.

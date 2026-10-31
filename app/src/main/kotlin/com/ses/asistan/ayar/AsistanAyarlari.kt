@@ -252,6 +252,29 @@ private fun AndroidSesSecici(ses: Ses, kapat: () -> Unit) {
 }
 
 /**
+ * "İlgili uygulamalar açıkken" için kullanım verisine erişim: Kanallarım, Notlar, Dosya Okuyucu'nun önde olduğu
+ * yalnız böyle anlaşılır (Harita köprüden kendisi bildirir).
+ */
+@Composable
+private fun KullanimErisimi() {
+    val ctx = LocalContext.current
+    var n by remember { mutableIntStateOf(0) }
+    LifecycleResumeEffect(Unit) { n++; onPauseOrDispose { } }
+    val var_ = remember(n) { com.ses.asistan.giris.OndekiUygulama.izinVar(ctx) }
+    SettingsItem(
+        modifier = Modifier.clickable {
+            ctx.startActivity(
+                android.content.Intent(android.provider.Settings.ACTION_USAGE_ACCESS_SETTINGS)
+                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        },
+        title = "Kullanım verilerine erişim",
+        icon = Icons.Default.Layers,
+        description = if (var_) "Verildi: açık uygulama anlaşılır" else "Verilmedi: yalnız Harita (köprüyle) anlaşılır. Dokunun, Asistan'ı açın",
+    )
+}
+
+/**
  * Uyanmanın neden çalışıp çalışmadığı (telefonda "hiç uyanmıyor" denince ilk bakılacak yer). Ayar ekranı asistanın
  * kendi ekranı olduğu için politika ekran dışındaki hâliyle söylenir.
  */
@@ -277,6 +300,7 @@ private fun UyanmaBolumu() {
         icon = Icons.Default.Hearing,
         description = "Sürekli dinleme pil harcar",
         possibleValues = listOf(
+            ListSetting.Value(UyanmaPolitikasi.Kip.UYGULAMALAR_ACIKKEN, "İlgili uygulamalar açıkken", "Harita, Kanallarım, Notlar, Dosya Okuyucu açıkken ya da navigasyonda; boştayken durur"),
             ListSetting.Value(UyanmaPolitikasi.Kip.ARACTA_VE_ELLE, "Araçta + elle", "Araç Bluetooth'u bağlıyken ya da navigasyonda; ayrıca bildirimden elle"),
             ListSetting.Value(UyanmaPolitikasi.Kip.HER_ZAMAN, "Her zaman", "Asistan servisi çalıştıkça"),
             ListSetting.Value(UyanmaPolitikasi.Kip.YALNIZ_ELLE, "Yalnız elle", "Bildirimdeki “Dinle / bırak” ya da aşağıdaki anahtar"),
@@ -289,6 +313,7 @@ private fun UyanmaBolumu() {
             descriptionWhenEmpty = "Boş: her Bluetooth ses aygıtı (kulaklık da) araç sayılır",
         ).Render(a.aracAdi) { a.aracAdi = it }
     }
+    if (a.uyanmaKipi == UyanmaPolitikasi.Kip.UYGULAMALAR_ACIKKEN) KullanimErisimi()
     if (a.uyanmaKipi != UyanmaPolitikasi.Kip.HER_ZAMAN) {
         BooleanSetting(
             title = "Elle dinleme",

@@ -10,6 +10,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
 import android.util.Log
+import com.ses.asistan.kopru.Kopru
 import com.ses.asistan.ses.SesAyarlari
 import com.ses.asistan.ses.SesDurumu
 import com.ses.asistan.ses.UyanmaPolitikasi
@@ -33,6 +34,7 @@ object UyanmaKapisi {
     private lateinit var ayarlar: SesAyarlari
     @Volatile private var bluetooth: List<String> = emptyList()
     @Volatile private var gorusmede = false
+    @Volatile private var ilgiliOnde: String? = null
     private var yoklandi = 0L
 
     @Synchronized
@@ -65,6 +67,8 @@ object UyanmaKapisi {
         if (now - yoklandi >= YOKLA_MS) {
             yoklandi = now
             gorusmede = a.mode == AudioManager.MODE_IN_CALL || a.mode == AudioManager.MODE_IN_COMMUNICATION
+            // yalnız bu kipte: kullanım verisi sorgusu boşuna yapılmasın
+            ilgiliOnde = if (ayarlar.uyanmaKipi == UyanmaPolitikasi.Kip.UYGULAMALAR_ACIKKEN) ilgiliUygulama(ctx) else null
         }
         return UyanmaPolitikasi.Durum(
             kip = ayarlar.uyanmaKipi,
@@ -73,9 +77,16 @@ object UyanmaKapisi {
             aracAdi = ayarlar.aracAdi,
             navigasyonda = SesDurumu.navigasyonda,
             asistanEkranda = org.stypox.dicio.MainActivity.isInForeground > 0,
+            ilgiliOnde = ilgiliOnde,
             uygulamaIstiyor = SesDurumu.uygulamaUyanmaIstiyor,
             gorusmede = gorusmede,
         )
+    }
+
+    /** Önde ilgili uygulama: önce köprünün "önde" bildirimi (Harita), sonra kullanım erişimi (Kanallarım, Notlar…). */
+    private fun ilgiliUygulama(ctx: Context): String? {
+        val p = Kopru.ondeOlan() ?: OndekiUygulama.paket(ctx)?.takeIf { it in UyanmaPolitikasi.ILGILI } ?: return null
+        return UyanmaPolitikasi.ILGILI[p] ?: p
     }
 
     fun kaydetmeli(ctx: Context): Boolean = !SesDurumu.tanimaIstiyor && UyanmaPolitikasi.dinlemeli(durum(ctx))

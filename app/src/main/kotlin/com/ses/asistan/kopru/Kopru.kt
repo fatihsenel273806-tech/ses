@@ -68,6 +68,8 @@ object Kopru {
     fun bagli(paket: String) = baglilar.containsKey(paket)
     fun navigasyonda(paket: String) = baglilar[paket]?.navigasyon == true
     fun onde(paket: String) = baglilar[paket]?.onde == true
+    /** Ekranda olduğunu bildiren bağlı uygulama (yoksa null). */
+    fun ondeOlan(): String? = baglilar.values.firstOrNull { it.onde }?.paket
 
     /** Yönlendirmenin adayları: köprüsü olan uygulamalar ve bağlıysa bildirdikleri durum. Ana iş parçacığında değil. */
     fun adaylar(ctx: Context): List<Yonlendirme.Aday> = Uygulamalar.hepsi(ctx).map {

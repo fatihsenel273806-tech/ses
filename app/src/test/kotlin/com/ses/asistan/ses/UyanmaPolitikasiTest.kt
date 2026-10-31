@@ -3,6 +3,7 @@ package com.ses.asistan.ses
 import com.ses.asistan.ses.UyanmaPolitikasi.Durum
 import com.ses.asistan.ses.UyanmaPolitikasi.Kip
 import com.ses.asistan.ses.UyanmaPolitikasi.dinlemeli
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -42,5 +43,18 @@ class UyanmaPolitikasiTest {
         assertTrue(UyanmaPolitikasi.neden(Durum()).startsWith("Dinlenmiyor: araçta değil"))
         assertTrue(UyanmaPolitikasi.neden(Durum(bluetoothAdlari = listOf("Buds"), aracAdi = "r-link")).contains("eşleşmiyor"))
         assertTrue(UyanmaPolitikasi.neden(Durum(bluetoothAdlari = listOf("R-Link"))).startsWith("Dinleniyor"))
+    }
+
+    @Test fun ilgiliUygulamalarAcikken() {
+        val k = Kip.UYGULAMALAR_ACIKKEN
+        // boştayken durur: Bluetooth bağlı olsa da
+        assertFalse(dinlemeli(Durum(kip = k, bluetoothAdlari = listOf("R-Link"))))
+        assertTrue(dinlemeli(Durum(kip = k, ilgiliOnde = "Kanallarım")))
+        assertTrue(dinlemeli(Durum(kip = k, navigasyonda = true)))
+        assertTrue(dinlemeli(Durum(kip = k, asistanEkranda = true)))
+        assertFalse(dinlemeli(Durum(kip = k, ilgiliOnde = "Harita", gorusmede = true)))
+        assertTrue(UyanmaPolitikasi.neden(Durum(kip = k, ilgiliOnde = "Harita")).contains("Harita açık"))
+        // ayarda sırayla saklanıyor: eski kipler yerinde kalmalı
+        assertEquals(listOf(Kip.ARACTA_VE_ELLE, Kip.HER_ZAMAN, Kip.YALNIZ_ELLE, Kip.UYGULAMALAR_ACIKKEN), Kip.values().toList())
     }
 }
