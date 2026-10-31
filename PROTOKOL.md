@@ -30,8 +30,9 @@ Dört uygulama farklı anahtarla imzalı olduğu için `signature` izni işe yar
 
 | İzin | Tanımlayan | `knownCerts` | Koruduğu |
 |---|---|---|---|
-| `com.ses.asistan.izin.SES` | asistan | Harita, Kanallarım (Notlar, Dosya Okuyucu Faz 4/5) | asistanın ses servisi |
+| `com.ses.asistan.izin.SES` | asistan | Harita, Kanallarım (Dosya Okuyucu Faz 5; Notlar'ın gerekmiyor, yayınla konuşur) | asistanın ses servisi |
 | `com.harita.ankara.izin.ASISTAN` | Harita | asistan | Harita'nın köprü servisi |
+| `dev.kaimau.notlar.izin.ASISTAN` | Notlar (yalnız kişisel derleme) | asistan, Harita, Kanallarım | Notlar'ın yayın alıcısı |
 
 Sertifikalar (SHA-256, iki nokta üst üste olmadan, küçük harf):
 
@@ -40,7 +41,8 @@ Sertifikalar (SHA-256, iki nokta üst üste olmadan, küçük harf):
 | Asistan (`app/asistan.keystore`) | `9f9ba7d6e0465f41e500744010cdb5e8428a09a5ec6d6e33ccd6510ff4209551` |
 | Harita (`app/debug.keystore`) | `d03a97662ef327430eae1debfd7632c29deacd156a146f0e9bc7236177b3359c` |
 | Kanallarım (`app/sabit.keystore`) | `ccfa3c3353148fb89f2d6860c2359e15498c64022c910d75fbc5b2483d70a1c7` |
-| Notlar, Dosya Okuyucu | anahtarlar Secrets'ta; Faz 4/5'te telefondaki APK'dan `apksigner verify --print-certs` ile |
+| Notlar | gerekmiyor (asistana bağlanmıyor); kişisel CI işi `apksigner verify --print-certs` ile yazdırır |
+| Dosya Okuyucu | anahtar Secrets'ta; Faz 5'te telefondaki APK'dan `apksigner verify --print-certs` ile |
 
 Tuzak: izni kullanan uygulama, izni tanımlayan uygulamadan önce kurulduysa ve köprü çalışmıyorsa kullanan uygulama
 yeniden kurulur.
@@ -111,6 +113,24 @@ yeniden kurulur.
 - Asistan kurulu değilse ya da bağlanılamazsa uygulama her şeyi kendi yoluyla yapar.
 - Bağlantı koparsa (asistan zorla durduruldu) o an asistanda okunmayı bekleyen cümle uygulamanın kendi sesiyle okunur;
   bekleyen dinleme boş sonuçla biter. Asistan 30 sn içinde `SÖYLENDİ` demezse cümle bitti sayılır.
+
+## Notlar yayınları (Faz 4)
+
+Notlar'ın köprü servisi yok (Flutter uygulaması; asistanla konuşma tek yönlü ve kısa). Asistan, Harita ve Kanallarım
+**sıralı yayınla** (`sendOrderedBroadcast`, bileşen `dev.kaimau.notlar/.HaritaNotAlici`,
+`FLAG_INCLUDE_STOPPED_PACKAGES | FLAG_RECEIVER_FOREGROUND`) yazar ve sorar. Alıcı yalnız Notlar'ın **kişisel**
+derlemesinde var (`android/app/src/kisisel`, `NOTLAR_KISISEL=1`); genel APK'da yoktur, yayın cevapsız kalır (kod 0).
+Notlar öne gelmez, Flutter motoru açılmaz: alıcı uygulamanın Firebase Android SDK'sıyla doğrudan yazar/okur.
+
+| Eylem | Ekler | Cevap kodu | Cevap ekleri |
+|---|---|---|---|
+| `dev.kaimau.notlar.HARITA_NOT` | `text`, `title`, `folder` (yoksa "Haritalar"), `place`, `pinned` | 1 yazıldı (sunucu onayladı), 2 sırada (çevrimdışı ya da giriş yok; bağlantı/giriş gelince yazılır), 0 olmadı | — |
+| `dev.kaimau.notlar.ASISTAN_SORGU` | `istek` (`son` \| `ara`), `terimler` (ArrayList<String>, `ara`'da hepsi notta geçmeli), `adet` (1–10) | 1 tamam, 3 giriş yok, 0 olmadı | `basliklar`, `metinler` (ArrayList<String>), `zamanlar` (long[], ms) |
+
+- Silinen, arşivlenen, **kilitli** notlar ve **gizli klasördeki** notlar sorguda asla verilmez.
+- Klasör adıyla bulunur (büyük/küçük harf duyarsız), yoksa açılır. Asistanın aldığı notlar "Asistan" klasörüne,
+  Harita'nınkiler "Haritalar"a, Kanallarım'ınkiler "YouTube"a (sabitli).
+- Kanallarım'ın `transcript` eki şimdilik yok sayılır (Notlar'da tam transkript/AI düzeltme yolu yok).
 
 ## Değişiklik kuralı
 

@@ -31,8 +31,9 @@ class YonlendirmeTest {
     }
 
     @Test fun kurulMamisUygulamaninAdi() {
-        // Notlar'ın köprüsü yoksa (aday değil) "hey notlar" Dicio'ya kalır
-        assertNull(Yonlendirme.once("son notum ne", "notlar", listOf(harita)))
+        // Notlar'ın köprü servisi yoksa (aday değil) "hey notlar" asistanın Notlar becerisine (yayın alıcısı)
+        assertEquals(Karar.Notlar("son notum ne"), Yonlendirme.once("son notum ne", "notlar", listOf(harita)))
+        assertEquals(Karar.Notlar("not al süt"), Yonlendirme.once("Hey Notlar, not al süt", null, emptyList()))
         assertEquals("dev.kaimau.notlar", (Yonlendirme.once("son notum ne", "notlar", listOf(harita, notlar)) as Karar.Uygulamaya).paket)
     }
 

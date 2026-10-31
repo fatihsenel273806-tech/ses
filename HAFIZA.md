@@ -88,6 +88,28 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
   Harita'da AGP eklentisini bulunamaz yapıyor; Harita'da yalnız Central adresini aynaya çevirmek yetiyor
   (init betiği kök yola göre ayırıyor). Harita compileSdk 37: `platforms;android-37.0`.
 
+- **2026-10-31 — Otomatik faz zinciri** (kullanıcı): her oturum bir faz yapar, `main`'e alır, sonraki fazı yeni
+  oturumda başlatır; kalan işler bitene kadar. Kararlar önden soruldu: **K4 derleme bayrağı**, **K6 evet (varsayılan
+  dijital asistan)**, telefonda ölçüm gereken maddeler 🟨 bırakılıp geçilir, **K5 şimdilik Vosk** (ölçüm telefonda).
+- **2026-10-31 — Faz 4: Notlar'da `HaritaNotAlici` hiç yoktu** (kök neden). Harita `NoteBridge` ve Kanallarım `Not.kt`
+  "Notlar'daki HaritaNotlari.kt" alıcısına sıralı yayın atıyordu; Notlar deposunun `main`'inde ve 2000 commit'lik
+  geçmişinde böyle bir alıcı yok (yalnız kullanıcının makinesinde kalmış olabilir). Yani "not al" hep "Not
+  kaydedilemedi" ile bitiyordu. Faz 4'te yazıldı: `android/app/src/kisisel/` (`HaritaNotAlici`, `NotDeposu`, izin,
+  sertifikalar). PLAN'daki `Ajan.kt` / `YerelNot` de Notlar'da yok.
+- **2026-10-31 — Notlar köprüsü: yayın + Firebase Android SDK** (Faz 4). Bağlı servis yerine sıralı yayın: konuşma
+  kısa ve tek yönlü, Notlar'ın asistana bağlanması gerekmiyor (sertifikası da gerekmiyor). Alıcı notu Flutter motoru
+  açmadan uygulamanın kendi Firebase SDK'sıyla yazar/okur (`cloud_firestore` aynı SDK; aynı süreç, önbellek, oturum).
+  Tuzaklar: (1) süreç yayın için uyanınca varsayılan FirebaseApp yok; `firebase_options.dart` ile AYNI seçeneklerle
+  açılır (yoksa Dart'ın `initializeApp`'ı duplicate-app ile düşer; CI denetler). (2) Firestore'u biz başlattıysak iş
+  bitince `terminate` (Dart'ın `settings` ataması başlamış örnekte hata verir). (3) Ön plan yayınında ~10 sn: her
+  bekleme 3 sn, klasör önce önbellekten. (4) Kotlin derlemesi için firebase BoM `releaseCompileOnly`, sürüm
+  `firebase_core`'un `FirebaseSDKVersion`'ı (34.15.0); sınıflar çalışma anında eklentilerden. Asistan dikteyi kendisi
+  yapar (Harita `dictateNote` akışı), notlar "Asistan" klasörüne. Alıcı izinle korunduğu için Harita ve Kanallarım
+  manifestine `dev.kaimau.notlar.izin.ASISTAN` eklendi (izni tanımlayan Notlar sonra kurulursa onlar yeniden kurulur).
+- **Derleme tuzağı (bulut, Flutter)**: Flutter'ın `flutter_tools/gradle` dahil derlemesinin `pluginManagement`'ı boş;
+  init betiği oraya yalnız aynayı koyarsa Gradle varsayılan eklenti portalını kaybeder (`kotlin-dsl` bulunamaz). Boşsa
+  önce `gradlePluginPortal()` + `google()` eklenir. Flutter 3.44.6 `/opt/flutter`, NDK 28.2 ilk derlemede iner.
+
 ## Reddedilen / değişen yollar
 
 - **Ortak kütüphane (her uygulamaya giren Kotlin AAR + Flutter eklentisi)** — 2026-10-31 sabah planlandı, aynı gün
@@ -147,6 +169,9 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
 
 ## Köprü protokolü değişiklikleri
 
-- 2026-10-31 sürüm 1 (`PROTOKOL.md`). Asistan ve Harita uyguluyor. Notlar ve Dosya Okuyucu Faz 4/5'te: kendi
-  izinlerini (`<paket>.izin.ASISTAN`, knownCerts = asistan) tanımlar, asistan manifestine `uses-permission` ve
-  `kopru_sertifikalari`'na sertifikaları eklenir.
+- 2026-10-31 sürüm 1 (`PROTOKOL.md`). Asistan ve Harita uyguluyor. Dosya Okuyucu Faz 5'te: kendi iznini
+  (`<paket>.izin.ASISTAN`, knownCerts = asistan) tanımlar, asistan manifestine `uses-permission` ve
+  `kopru_sertifikalari`'na sertifikası eklenir.
+- 2026-10-31 "Notlar yayınları" (Faz 4; sürüm değişmedi, Messenger kanalına dokunulmadı): `HARITA_NOT` +
+  `ASISTAN_SORGU`, izin `dev.kaimau.notlar.izin.ASISTAN` (knownCerts: asistan, Harita, Kanallarım). Değişen:
+  Notlar (kişisel kaynak kümesi), asistan (`uses-permission`, Notlar becerisi), Harita ve Kanallarım (`uses-permission`).

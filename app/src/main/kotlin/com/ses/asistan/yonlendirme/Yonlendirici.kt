@@ -3,6 +3,8 @@ package com.ses.asistan.yonlendirme
 import com.ses.asistan.beceri.DevirBecerisi
 import com.ses.asistan.beceri.KanallarBecerisi
 import com.ses.asistan.beceri.KanallarSozleri
+import com.ses.asistan.beceri.NotlarBecerisi
+import com.ses.asistan.beceri.NotlarSozleri
 import com.ses.asistan.kopru.Kopru
 import com.ses.asistan.ses.SesDurumu
 import org.dicio.skill.context.SkillContext
@@ -30,6 +32,12 @@ object Yonlendirici {
                     .map { (Yonlendirme.once(it, ad, adaylar) as? Yonlendirme.Karar.Kanallar)?.metin ?: it }
                     .firstOrNull { KanallarSozleri.parse(it) != null } ?: k.metin
                 ilk to KanallarBecerisi(zorla = true).scoreAndWrapResult(ctx, metin)
+            }
+            is Yonlendirme.Karar.Notlar -> {
+                val metin = utterances.asSequence()
+                    .map { (Yonlendirme.once(it, ad, adaylar) as? Yonlendirme.Karar.Notlar)?.metin ?: it }
+                    .firstOrNull { NotlarSozleri.parse(it) != null } ?: k.metin
+                ilk to NotlarBecerisi(zorla = true).scoreAndWrapResult(ctx, metin)
             }
         }
     }

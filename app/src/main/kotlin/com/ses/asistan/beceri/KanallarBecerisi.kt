@@ -8,13 +8,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import com.ses.asistan.beceri.KanallarSozleri.Eylem
 import com.ses.asistan.beceri.KanallarSozleri.Komut
-import com.ses.asistan.giris.Kulak
 import com.ses.asistan.ses.Dictation
 import com.ses.asistan.ses.Ses
-import com.ses.asistan.ses.SpeechQueue
 import com.ses.asistan.ses.Tones
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import org.dicio.skill.context.SkillContext
 import org.dicio.skill.skill.AlwaysWorstScore
@@ -25,7 +22,6 @@ import org.dicio.skill.skill.Skill
 import org.dicio.skill.skill.SkillInfo
 import org.dicio.skill.skill.SkillOutput
 import org.dicio.skill.skill.Specificity
-import kotlin.coroutines.resume
 
 /**
  * Kanallarım becerisi (PLAN Faz 2; Kanallarım'da değişiklik yok). Harita'nın Kanallarım komutları asistana taşındı:
@@ -118,21 +114,6 @@ class KanallarBecerisi(private val zorla: Boolean) : Skill<Komut?>(KanallarInfo,
             2 -> Cikti("Not alındı; Notlar'a giriş yapılınca YouTube klasörüne geçecek.")
             null -> Cikti("Kanallarım'da çalan bir video yok.")
             else -> Cikti("Not kaydedilemedi. Notlar uygulamasını güncelleyin.")
-        }
-    }
-
-    private suspend fun konusVeBekle(ses: Ses, metin: String) = withContext(Dispatchers.Main) {
-        suspendCancellableCoroutine { k ->
-            ses.soyle(metin, SpeechQueue.Kind.CEVAP)
-            ses.bitinceCalistir { if (k.isActive) k.resume(Unit) }
-        }
-    }
-
-    private suspend fun dikte(ctx: Context, baslangic: String): String? = withContext(Dispatchers.Main) {
-        val kulak = Kulak.al(ctx)
-        suspendCancellableCoroutine { k ->
-            k.invokeOnCancellation { kulak.iptal() }
-            kulak.dikte(baslangic) { t -> if (k.isActive) k.resume(t) }
         }
     }
 

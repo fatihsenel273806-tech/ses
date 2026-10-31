@@ -33,6 +33,7 @@ import org.stypox.dicio.skills.weather.WeatherInfo
 import org.stypox.dicio.skills.joke.JokeInfo
 import org.stypox.dicio.skills.flashlight.FlashlightInfo
 import com.ses.asistan.beceri.KanallarInfo // ASISTAN
+import com.ses.asistan.beceri.NotlarInfo // ASISTAN
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -60,6 +61,7 @@ class SkillHandler @Inject constructor(
         NotifyInfo,
         FlashlightInfo,
         KanallarInfo, // ASISTAN
+        NotlarInfo, // ASISTAN
     )
 
     private val fallbackSkillInfoList = listOf(

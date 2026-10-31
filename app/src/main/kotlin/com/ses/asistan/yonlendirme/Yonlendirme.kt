@@ -4,7 +4,7 @@ import java.util.Locale
 
 /**
  * Söylenenin nereye gideceği (PLAN §1). Android'e bağlı değil: JVM testiyle sınanır. Sıra:
- *  1. [once]: uyanma adı ("Hey Harita …", "Hey Kanallar …"); cümlenin başında söylenen ad da sayılır. (Uygulamanın
+ *  1. [once]: uyanma adı ("Hey Harita …", "Hey Kanallar …", "Hey Notlar …"); cümlenin başında söylenen ad da sayılır. (Uygulamanın
  *     kendi dinleme isteği — `DİNLE`, `DİKTE` — buraya hiç gelmez: duyulan doğrudan o uygulamaya gider.)
  *  2. Dicio becerileri (bizimkiler dahil) — bu sınıfın dışında, SkillEvaluator'da.
  *  3. [sonra]: hiçbir beceri anlamadıysa metin devri: devri o an kabul eden bağlı uygulama (ör. navigasyondaki Harita).
@@ -13,6 +13,8 @@ import java.util.Locale
 object Yonlendirme {
     /** Asistanın kendi becerisi olan uyanma adı (köprüsü olan uygulama değil). */
     const val KANALLAR = "kanallar"
+    /** Notlar'ın köprü servisi yok: yayın alıcısıyla asistanın kendi becerisi konuşur (Faz 4). */
+    const val NOTLAR = "notlar"
     const val ASISTAN = "asistan"
 
     /** Metin devrini ne zaman kabul ettiği (`ses_yetenekler.xml` › `devir`). */
@@ -48,6 +50,8 @@ object Yonlendirme {
         data class Uygulamaya(val paket: String, val metin: String, val uyanma: Boolean) : Karar
         /** "Hey Kanallar …": yalnız Kanallarım becerisi dinlenir. */
         data class Kanallar(val metin: String) : Karar
+        /** "Hey Notlar …": yalnız Notlar becerisi dinlenir (Notlar'ın köprü servisi yoksa). */
+        data class Notlar(val metin: String) : Karar
     }
 
     private val TR = Locale("tr")
@@ -63,12 +67,12 @@ object Yonlendirme {
 
     /** 1. adım. [uyanmaAdi]: Vosk'un duyduğu ad. null: Dicio becerilerine geçilir. */
     fun once(metin: String, uyanmaAdi: String?, adaylar: List<Aday>): Karar? {
-        val adlar = adaylar.mapNotNull { it.uyanma } + KANALLAR
+        val adlar = adaylar.mapNotNull { it.uyanma } + KANALLAR + NOTLAR
         val bas = basindakiAd(metin, adlar)
         val ad = uyanmaAdi?.takeIf { it != ASISTAN } ?: bas?.first ?: return null
         val kalan = if (bas != null && bas.first == ad) bas.second else metin.trim()
         if (ad == KANALLAR) return Karar.Kanallar(kalan)
-        val a = adaylar.firstOrNull { it.uyanma == ad } ?: return null
+        val a = adaylar.firstOrNull { it.uyanma == ad } ?: return if (ad == NOTLAR) Karar.Notlar(kalan) else null
         return Karar.Uygulamaya(a.paket, kalan, uyanma = uyanmaAdi != null)
     }
 

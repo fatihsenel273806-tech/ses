@@ -10,10 +10,15 @@ Dosya Okuyucu) kendi ses özellikleriyle devam eder; onlardaki asistan köprüs�
 | 1 | Ses çekirdeği: Google tanıma + dikte, Vosk uyanma (çok söz), Antalia + tek ses kuyruğu | 🟨 telefonda ölçüm bekliyor |
 | 2 | Köprü protokolü + Kanallarım becerisi (Kanallarım'da değişiklik yok) | 🟨 telefonda deneme bekliyor |
 | 3 | Harita geçişi: ses asistanda, yönlendirme mantığı Harita'da | 🟨 telefonda ölçüm bekliyor; Harita'nın kendi ses kodu ölçümden sonra silinir |
-| 4 | Notlar köprüsü (yalnız kişisel derleme) | ⬜ |
+| 4 | Notlar köprüsü (yalnız kişisel derleme) | 🟨 telefonda deneme bekliyor |
 | 5 | Dosya Okuyucu köprüsü (yalnız kişisel derleme) | ⬜ |
 | 6 | Beyin: Gemini yedek beceri, bağlı uygulamaların araçları, konuşma belleği | ⬜ |
 | 7 | İsteğe bağlı: openWakeWord, araç/Bluetooth düğmesi, varsayılan asistan, Dicio güncellemeleri | ⬜ |
+
+**Otomatik zincir (kullanıcı 2026-10-31):** "1 faz yap, main'e pushla, sonra yeni oturumda diğer fazı başlat, o da
+bitirip main'e merge etsin; kalan işler bitinceye kadar otomatik." Her oturum bir faz yapar, `main`'e alır ve bir
+sonraki fazı yeni oturumda başlatır. Telefonda ölçüm gereken maddeler 🟨 bırakılıp geçilir (kullanıcı kararı).
+Harita'nın ses kodu ölçüm geçmeden silinmez (§8).
 
 **Protokol:** kullanıcı "Faz N'i yap" deyince yalnız o faz yapılır. KARAR maddelerinde önce sorulur. Bitince
 maddeler `[x]`, Durum tablosu ✅, HAFIZA güncellenir, commit + push. Kendiliğinden sonraki faza geçilmez. Başka
@@ -199,13 +204,19 @@ mikrofon ─► │ Uyanma: Vosk dilbilgisi ("hey asistan", "hey harita", "hey n
     (ekran kilitliyken de).
 
 ### Faz 4 — Notlar köprüsü (yalnız kişisel derleme)
-- [ ] KARAR K4 (köprünün dağıtılan APK'dan nasıl çıkacağı) sorulur.
-- [ ] "Not al" (dikte asistanda) → mevcut `HaritaNotAlici` yayını (klasör/başlık/sabitle ekleri). Alıcı
-  `knownSigner` izniyle korunur.
-- [ ] "Notlarımda X'i ara", "son notumu oku", "son notlar": yeni köprü (`Ajan.kt` + `YerelNot` mantığı; Flutter
-  motoru açılmaz). Kilitli ve gizli klasördeki notlar asla verilmez.
+- [x] KARAR K4 (köprünün dağıtılan APK'dan nasıl çıkacağı) sorulur. (**Derleme bayrağı**: `NOTLAR_KISISEL=1` ya da
+  `-Pkisisel=true` → release'e `android/app/src/kisisel` eklenir; Dosya Okuyucu'da da aynı yöntem.)
+- [x] "Not al" (dikte asistanda) → `HaritaNotAlici` yayını (klasör/başlık/sabitle ekleri). Alıcı
+  `knownSigner` izniyle korunur. (Alıcı Notlar'da hiç yoktu — Harita ve Kanallarım karşılıksız yayın atıyordu, bkz.
+  HAFIZA; Faz 4'te yazıldı. Asistan: `beceri/NotlarBecerisi`, notlar "Asistan" klasörüne. Harita ve Kanallarım
+  manifestine `dev.kaimau.notlar.izin.ASISTAN` eklendi.)
+- [x] "Notlarımda X'i ara", "son notumu oku", "son notlar": yeni köprü (`Ajan.kt` + `YerelNot` mantığı; Flutter
+  motoru açılmaz). Kilitli ve gizli klasördeki notlar asla verilmez. (`Ajan.kt`/`YerelNot` Notlar'da yok; köprü
+  `ASISTAN_SORGU` yayını, alıcı uygulamanın Firebase Android SDK'sıyla doğrudan okur — `NotDeposu.kt`. Liste okunur,
+  "ikinci"/adıyla seçilen not okunur. "Hey Notlar …" asistanın Notlar becerisine gider.)
 - [ ] Bitti sayılır: kişisel APK'da komutlar çalışıyor; genel (dağıtılan) APK'da köprü yok (manifest denetimi) ve
-  Notlar'ın kendi sesli özellikleri değişmemiş.
+  Notlar'ın kendi sesli özellikleri değişmemiş. (Genel APK manifest denetimi CI'da; Notlar'ın Dart koduna
+  dokunulmadı. Telefonda denenecek: kişisel APK `kisisel` sürümünden, Notlar'da başlıkta `[kisisel]` ile derlenir.)
 
 ### Faz 5 — Dosya Okuyucu köprüsü (yalnız kişisel derleme)
 - [ ] Köprü Kotlin'i `ci/` yaması olarak (`prepare_android.sh`), kişisel bayrakla; `tool/check_kotlin.sh` koşulur.
@@ -236,13 +247,14 @@ mikrofon ─► │ Uyanma: Vosk dilbilgisi ("hey asistan", "hey harita", "hey n
 - [x] **K2** (Faz 0) Uygulama kimliği ve adı. **Karar: `com.ses.asistan`, "Asistan".**
 - [x] **K3** (Faz 1) **Karar (2026-10-31): araçta + elle.** Uyanma ne zaman açık: her zaman / araçta (araç Bluetooth'u bağlı ya da Harita navigasyonda)
   + elle / yalnız elle. Öneri: araçta + elle. Sürekli dinleme pil yer; Faz 1 ölçümüne göre karar verilir.
-- [ ] **K4** (Faz 4) Köprünün dağıtılan APK'dan çıkışı: Gradle ürün çeşidi (`kisisel`/`genel`) ya da derleme
-  bayrağı. İki uygulamada aynı yöntem kullanılır.
+- [x] **K4** (Faz 4) Köprünün dağıtılan APK'dan çıkışı. **Karar (2026-10-31): derleme bayrağı** (ürün çeşidi değil).
+  İki uygulamada aynı yöntem kullanılır.
 - [x] **Uyanma kipi "İlgili uygulamalar açıkken"** (kullanıcı 2026-10-31: "ilgili uygulamalar açıkken seçeneği olsun,
   onlarla beraber çalışsın, boşta durmuş olur"): K3'ün yanına dördüncü kip.
-- [ ] **K5** (Faz 7) Uyanma motoru: Vosk dilbilgisi mi openWakeWord mü (ölçümle).
-- [ ] **K6** (Faz 7) Asistan varsayılan dijital asistan olsun mu? O zaman Gemini'nin yerini alır; uygulamalardaki
-  Gemini AppFunctions'ı etkilenmez.
+- [ ] **K5** (Faz 7) Uyanma motoru: Vosk dilbilgisi mi openWakeWord mü (ölçümle). (Kullanıcı 2026-10-31: ölçüm
+  bulutta yapılamadığı için şimdilik Vosk kalır; telefon ölçümü bekleyen madde olarak durur.)
+- [x] **K6** (Faz 7) Asistan varsayılan dijital asistan olsun mu? **Karar (2026-10-31): evet.** Gemini'nin yerini
+  alır; uygulamalardaki Gemini AppFunctions'ı etkilenmez.
 
 ## 8. Riskler
 
