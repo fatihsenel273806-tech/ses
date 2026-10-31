@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import com.ses.asistan.giris.ElleDinleAlici // ASISTAN
 import com.ses.asistan.giris.UyanmaKapisi // ASISTAN
+import com.ses.asistan.yonlendirme.Yonlendirici // ASISTAN
 import org.stypox.dicio.MainActivity
 import org.stypox.dicio.MainActivity.Companion.ACTION_WAKE_WORD
 import org.stypox.dicio.R
@@ -245,6 +246,9 @@ class WakeService : Service() {
         // Unload the STT after a while because it would be using RAM uselessly
         handler.removeCallbacks(releaseSttResourcesRunnable)
         handler.postDelayed(releaseSttResourcesRunnable, RELEASE_STT_RESOURCES_MILLIS)
+
+        // ASISTAN: "Hey Harita", "Hey Kanallar": asistanın ekranı açılmaz, cevap sesli (harita ekranda kalır)
+        if (Yonlendirici.ekransiz()) return
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || MainActivity.isInForeground > 0) {
             // start the activity directly on versions prior to Android 10,

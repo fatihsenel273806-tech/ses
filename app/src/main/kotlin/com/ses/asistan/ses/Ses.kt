@@ -11,14 +11,15 @@ import android.os.SystemClock
  * Konuşurken uyanma kendi sesini duymasın diye [SesDurumu.konusuyor] açıktır.
  *
  * Tek örnek, ana iş parçacığında kullanılır ([al]). Dicio'nun cevapları [AsistanSpeechDevice] ile [Kind.CEVAP]
- * olarak gelir; bağlı uygulamaların `SÖYLE` iletisi Faz 2/3'te aynı [soyle]'ye bağlanır.
+ * olarak gelir; bağlı uygulamaların `SÖYLE` iletisi ([com.ses.asistan.kopru.Kopru]) aynı [soyle]'ye, kaynağıyla.
+ * Her öğenin [SpeechQueue.Item.bitti]'si bir kez çağrılır: okununca, kesilince ya da okunmadan atılınca.
  */
 class Ses private constructor(ctx: Context) {
     private val main = Handler(Looper.getMainLooper())
     val ayarlar = SesAyarlari.al(ctx)
     val voice = Voice(ctx, ayarlar)
     private val tones = Tones()
-    private val kuyruk = SpeechQueue(max = KUYRUK)
+    private val kuyruk = SpeechQueue(max = KUYRUK) { it, bayat -> it.bitti?.invoke(bayat) }
     private val bitince = ArrayList<Runnable>()
     @Volatile private var simdiki: SpeechQueue.Item? = null
 
@@ -32,23 +33,41 @@ class Ses private constructor(ctx: Context) {
         get() = voice.onStatus
         set(v) { voice.onStatus = v }
 
-    /** Söylenecekleri sıraya koyar; boştaysa hemen başlar. [again]: talimat bayatlarsa yeniden üretir (Faz 3). */
-    fun soyle(metin: String, tur: SpeechQueue.Kind = SpeechQueue.Kind.CEVAP, again: (() -> String?)? = null) {
-        if (metin.isBlank()) return
+    /**
+     * Söylenecekleri sıraya koyar; boştaysa hemen başlar. [again]: talimat bayatlarsa yeniden üretir. [kaynak]: bağlı
+     * uygulama; [isaret]: uyarıdan önce ses işareti; [bitti]: okununca/atılınca (true: bayat, okunmadı).
+     */
+    fun soyle(
+        metin: String, tur: SpeechQueue.Kind = SpeechQueue.Kind.CEVAP, again: (() -> String?)? = null,
+        kaynak: String? = null, isaret: Boolean = true, bitti: ((Boolean) -> Unit)? = null,
+    ) {
+        if (metin.isBlank()) { bitti?.let { b -> ana { b(false) } }; return }
         ana {
-            kuyruk.push(SpeechQueue.Item(metin, tur, SystemClock.elapsedRealtime(), again))
+            kuyruk.push(SpeechQueue.Item(metin, tur, SystemClock.elapsedRealtime(), again, kaynak, isaret, bitti))
             if (simdiki == null) sonraki()
         }
     }
 
-    /** [tur] verilirse yalnız o sınıf susar (ör. Dicio'nun "sus"u yalnız cevapları keser), yoksa hepsi. */
-    fun sustur(tur: SpeechQueue.Kind? = null) {
+    /**
+     * [tur] verilirse yalnız o sınıf susar (ör. Dicio'nun "sus"u yalnız cevapları keser), yoksa hepsi. [kaynak]
+     * verilirse yalnız o uygulamanın sesleri (Harita kendi talimatını keser, asistanın cevabına dokunmaz).
+     */
+    fun sustur(tur: SpeechQueue.Kind? = null, kaynak: String? = null) {
         ana {
-            if (tur == null) kuyruk.clear() else kuyruk.drop(tur)
-            if (simdiki != null && (tur == null || simdiki?.kind == tur)) {
+            when {
+                kaynak != null -> kuyruk.drop(kaynak, tur)
+                tur == null -> kuyruk.clear()
+                else -> kuyruk.drop(tur)
+            }
+            val s = simdiki
+            if (s != null && (tur == null || s.kind == tur) && (kaynak == null || s.kaynak == kaynak)) {
                 voice.stop()
                 main.removeCallbacks(alarmdanSonra)
-                bitti()
+                s.bitti?.invoke(false)
+                // kalanlar (başka sınıf ya da başka kaynak) sırayla sürer
+                simdiki = null
+                bekleyen = null
+                sonraki()
             }
         }
     }
@@ -66,7 +85,7 @@ class Ses private constructor(ctx: Context) {
         if (it == null) { bitti(); return }
         simdiki = it
         SesDurumu.konusuyor = true
-        if (it.kind == SpeechQueue.Kind.UYARI) {
+        if (it.kind == SpeechQueue.Kind.UYARI && it.isaret) {
             tones.play(Tones.Kind.ALERT)
             bekleyen = it
             main.postDelayed(alarmdanSonra, ALARM_MS)
@@ -76,7 +95,7 @@ class Ses private constructor(ctx: Context) {
     }
 
     private fun konus(it: SpeechQueue.Item) {
-        voice.speak(it.text) { if (simdiki === it) sonraki() }
+        voice.speak(it.text) { if (simdiki === it) { it.bitti?.invoke(false); sonraki() } }
     }
 
     private fun bitti() {

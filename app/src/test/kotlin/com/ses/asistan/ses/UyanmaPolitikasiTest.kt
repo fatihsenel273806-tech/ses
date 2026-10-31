@@ -12,6 +12,7 @@ class UyanmaPolitikasiTest {
         assertFalse(dinlemeli(Durum()))
         assertTrue(dinlemeli(Durum(elleAcik = true)))
         assertTrue(dinlemeli(Durum(navigasyonda = true)))
+        assertTrue(dinlemeli(Durum(uygulamaIstiyor = true)))
         assertTrue(dinlemeli(Durum(bluetoothAdlari = listOf("Renault R-Link"))))
     }
 
@@ -26,7 +27,7 @@ class UyanmaPolitikasiTest {
 
     @Test fun digerKipler() {
         assertTrue(dinlemeli(Durum(kip = Kip.HER_ZAMAN)))
-        assertFalse(dinlemeli(Durum(kip = Kip.YALNIZ_ELLE, navigasyonda = true, bluetoothAdlari = listOf("Araç"))))
+        assertFalse(dinlemeli(Durum(kip = Kip.YALNIZ_ELLE, navigasyonda = true, uygulamaIstiyor = true, bluetoothAdlari = listOf("Araç"))))
         assertTrue(dinlemeli(Durum(kip = Kip.YALNIZ_ELLE, elleAcik = true)))
     }
 

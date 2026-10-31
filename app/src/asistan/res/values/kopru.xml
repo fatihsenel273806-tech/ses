@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Köprü: asistanın ses servisine bağlanabilecek uygulamaların imza sertifikaları (SHA-256, PROTOKOL.md).
+     Notlar ve Dosya Okuyucu'nunkiler Faz 4/5'te eklenir (anahtarları o depoların Secrets'ında; telefondaki APK'dan
+     apksigner ile ile okunur). -->
+<resources>
+    <string-array name="kopru_sertifikalari" translatable="false">
+        <!-- Harita Ankara (app/debug.keystore) -->
+        <item>d03a97662ef327430eae1debfd7632c29deacd156a146f0e9bc7236177b3359c</item>
+        <!-- Kanallarım (app/sabit.keystore) -->
+        <item>ccfa3c3353148fb89f2d6860c2359e15498c64022c910d75fbc5b2483d70a1c7</item>
+    </string-array>
+</resources>

@@ -25,6 +25,7 @@ import org.stypox.dicio.ui.home.PendingQuestion
 import org.stypox.dicio.ui.home.QuestionAnswer
 import javax.inject.Singleton
 import org.dicio.skill.standard.util.MatchHelper
+import com.ses.asistan.yonlendirme.Yonlendirici // ASISTAN
 
 interface SkillEvaluator {
     val state: StateFlow<InteractionLog>
@@ -97,12 +98,15 @@ class SkillEvaluatorImpl(
 
     private suspend fun evaluateMatchingSkill(utterances: List<String>) {
         val (chosenInput, chosenSkill) = try {
+            // ASISTAN: uyanma adıyla doğrudan yönlendirme, hiçbir beceri anlamazsa metin devri (PLAN §1)
+            Yonlendirici.once(skillContext, utterances) ?:
             utterances.firstNotNullOfOrNull { input: String ->
                 skillContext.standardMatchHelper = MatchHelper(skillContext.parserFormatter, input)
                 skillRanker.getBest(skillContext, input)?.let { skillWithResult ->
                     Pair(input, skillWithResult)
                 }
-            } ?: Pair(utterances[0], skillRanker.getFallbackSkill(skillContext, utterances[0]))
+            } ?: Yonlendirici.sonra(skillContext, utterances) // ASISTAN
+            ?: Pair(utterances[0], skillRanker.getFallbackSkill(skillContext, utterances[0]))
         } catch (throwable: Throwable) {
             addErrorInteractionFromPending(throwable)
             return

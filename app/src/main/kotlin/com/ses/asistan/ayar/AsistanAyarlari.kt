@@ -7,6 +7,8 @@ import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Hearing
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RecordVoiceOver
@@ -33,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.LazyColumn
@@ -86,6 +89,44 @@ fun LazyListScope.asistanAyarlari() {
     item { SesBolumu() }
     item { SettingsCategoryTitle("Uyanma (“Hey Asistan”)") }
     item { UyanmaBolumu() }
+    item { SettingsCategoryTitle("Bağlı uygulamalar") }
+    item { BagliBolumu() }
+}
+
+/**
+ * Köprünün telefon izinleri: Harita kapalıyken "Hey Harita, …" haritayı açabilsin (diğer uygulamaların üzerinde
+ * göster; HyperOS'ta ayrıca "arka planda açılır pencere") ve "ne çalıyor", sarma YouTube'da da çalışsın (bildirim
+ * erişimi: çalan oturumlar). Ekrana dönünce durum yenilenir.
+ */
+@Composable
+private fun BagliBolumu() {
+    val ctx = LocalContext.current
+    var n by remember { mutableIntStateOf(0) }
+    LifecycleResumeEffect(Unit) { n++; onPauseOrDispose { } }
+    val ustte = remember(n) { android.provider.Settings.canDrawOverlays(ctx) }
+    SettingsItem(
+        modifier = Modifier.clickable {
+            ctx.startActivity(
+                android.content.Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:${ctx.packageName}"))
+                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        },
+        title = "Diğer uygulamaların üzerinde göster",
+        icon = Icons.Default.Layers,
+        description = if (ustte) "Verildi: “Hey Harita, …” kapalı haritayı açabilir" else "Verilmedi: uygulama kapalıyken ekranı açamaz (HyperOS: ayrıca “arka planda açılır pencere”)",
+    )
+    val bildirim = remember(n) { androidx.core.app.NotificationManagerCompat.getEnabledListenerPackages(ctx).contains(ctx.packageName) }
+    SettingsItem(
+        modifier = Modifier.clickable {
+            ctx.startActivity(
+                android.content.Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+                    .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        },
+        title = "Bildirim erişimi",
+        icon = Icons.Default.Notifications,
+        description = if (bildirim) "Verildi: sarma ve “ne çalıyor” çalan her uygulamada" else "Verilmedi: sarma ve “ne çalıyor” yalnız Kanallarım'da",
+    )
 }
 
 /** Ayarları Compose durumuna bağlar: değişince ekran yenilenir. */

@@ -73,6 +73,7 @@ object UyanmaKapisi {
             aracAdi = ayarlar.aracAdi,
             navigasyonda = SesDurumu.navigasyonda,
             asistanEkranda = org.stypox.dicio.MainActivity.isInForeground > 0,
+            uygulamaIstiyor = SesDurumu.uygulamaUyanmaIstiyor,
             gorusmede = gorusmede,
         )
     }

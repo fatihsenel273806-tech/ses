@@ -1,10 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Asistan: Dicio'nun manifestiyle birleşir (debug ve release kaynak kümeleri); Dicio dosyasına dokunulmaz -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Köprü (PROTOKOL.md): asistanın ses servisine yalnız bilinen sertifikalı uygulamalar bağlanır.
+         Dört uygulama farklı anahtarla imzalı: signature yetmez, knownSigner (Android 12+) -->
+    <permission
+        android:name="com.ses.asistan.izin.SES"
+        android:knownCerts="@array/kopru_sertifikalari"
+        android:label="Asistan sesi"
+        android:protectionLevel="signature|knownSigner"
+        tools:targetApi="31" />
+
+    <!-- uygulamaların köprü servisleri (uygulama kapalıyken metin devri); her uygulama kendi iznini tanımlar -->
+    <uses-permission android:name="com.harita.ankara.izin.ASISTAN" />
+    <!-- "Hey Harita, …" Harita kapalıyken haritayı açabilsin (arka plandan ekran açma; ayarlardan verilir) -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
     <application>
         <!-- K3 elle dinleme: uyanma bildirimindeki "Dinle / bırak" düğmesi -->
         <receiver
             android:name="com.ses.asistan.giris.ElleDinleAlici"
             android:exported="false" />
+
+        <service
+            android:name="com.ses.asistan.kopru.SesServisi"
+            android:exported="true"
+            android:permission="com.ses.asistan.izin.SES">
+            <intent-filter>
+                <action android:name="com.ses.asistan.SES" />
+            </intent-filter>
+        </service>
     </application>
 </manifest>

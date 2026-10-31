@@ -17,9 +17,29 @@ object SesDurumu {
     /** Asistan konuşuyor: uyanma kendi sesini duymasın (Harita `WakeWord.deaf`). */
     @Volatile var konusuyor = false
 
-    /** Son duyulan uyanma adı ([WakeGrammar.NAMES]); yönlendirme Faz 2'de bunu okur. */
+    /** Son duyulan uyanma adı ([WakeGrammar.NAMES]); yönlendirme [uyanmaAdiAl] ile bir kez okur. */
     @Volatile var sonUyanmaAdi: String? = null
+        set(v) { field = v; uyanmaAni = System.nanoTime() / 1_000_000 }
+    @Volatile private var uyanmaAni = 0L
 
-    /** Bağlı uygulama navigasyonda (Faz 3: Harita `DURUM`); K3 politikasında "araçta" sayılır. */
+    /**
+     * Uyanmadan sonraki ilk komutun yönlendirmesi için duyulan ad; bir kez verilir. Tanıyıcı hiçbir şey duymadıysa
+     * eski ad [UYANMA_GECERLI_MS] sonra geçersizdir (sonraki elle dinleme yanlış uygulamaya gitmesin).
+     */
+    fun uyanmaAdiAl(): String? {
+        val ad = uyanmaAdi()
+        sonUyanmaAdi = null
+        return ad
+    }
+
+    /** Uyanma adı hâlâ geçerli mi (okumadan; uyanma servisinin ekran açıp açmama kararı). */
+    fun uyanmaAdi(): String? = sonUyanmaAdi?.takeIf { System.nanoTime() / 1_000_000 - uyanmaAni <= UYANMA_GECERLI_MS }
+
+    private const val UYANMA_GECERLI_MS = 20_000L
+
+    /** Bağlı uygulama navigasyonda (Harita `DURUM`); K3 politikasında "araçta" sayılır. */
     @Volatile var navigasyonda = false
+
+    /** Bağlı uygulamanın kendi ayarı uyanma dinlemesi istiyor (Harita "her zaman" kipi, ekrandayken). */
+    @Volatile var uygulamaUyanmaIstiyor = false
 }
