@@ -32,10 +32,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Dicio Java 21 ister (runner'ın varsayılanı 17); Android SDK runner'da hazır
+      # Dicio Java 21 ister, dicio-numbers araç zinciri 17; sonuncusu (21) varsayılan olur. Android SDK runner'da hazır
       - uses: actions/setup-java@v4
         with:
-          java-version: 21
+          java-version: |
+            17
+            21
           distribution: temurin
 
       - uses: gradle/actions/setup-gradle@v4
