@@ -12,7 +12,7 @@ Dosya Okuyucu) kendi ses özellikleriyle devam eder; onlardaki asistan köprüs�
 | 3 | Harita geçişi: ses asistanda, yönlendirme mantığı Harita'da | 🟨 telefonda ölçüm bekliyor; Harita'nın kendi ses kodu ölçümden sonra silinir |
 | 4 | Notlar köprüsü (yalnız kişisel derleme) | 🟨 telefonda deneme bekliyor |
 | 5 | Dosya Okuyucu köprüsü (yalnız kişisel derleme) | 🟨 asistan tarafı main'de; Dosya Okuyucu yaması push izni bekliyor (`yamalar/`), sesli oku/özet K7 |
-| 6 | Beyin: Gemini yedek beceri, bağlı uygulamaların araçları, konuşma belleği | ⬜ |
+| 6 | Beyin: Gemini yedek beceri, bağlı uygulamaların araçları, konuşma belleği | 🟨 kod main'de; telefonda Gemini anahtarıyla deneme bekliyor |
 | 7 | İsteğe bağlı: openWakeWord, araç/Bluetooth düğmesi, varsayılan asistan, Dicio güncellemeleri | ⬜ |
 
 **Otomatik zincir (kullanıcı 2026-10-31):** "1 faz yap, main'e pushla, sonra yeni oturumda diğer fazı başlat, o da
@@ -234,11 +234,25 @@ mikrofon ─► │ Uyanma: Vosk dilbilgisi ("hey asistan", "hey harita", "hey n
   yama uygulanıp CI'da koşunca ve telefonda kişisel APK'da "dosyasını aç" denenince.)
 
 ### Faz 6 — Beyin
-- [ ] Gemini yedek becerisi: Dicio'nun yedek becerisinin önüne geçer. Araçlar bağlı uygulamaların
+- [x] Gemini yedek becerisi: Dicio'nun yedek becerisinin önüne geçer. Araçlar bağlı uygulamaların
   `ses_yetenekler.xml`'inden ve asistanın kendi becerilerinden gelir. Anahtar ayarlardan girilir, depoya girmez.
-- [ ] Konuşma belleği (Harita `Conversation`): "oraya git", "ikincisi" gibi bağlama dayanan cümleler anlaşılır.
-- [ ] Bağlam: `DURUM`'dan (navigasyon, çalan video) Gemini'ye kısa özet gider.
-- [ ] Çift yorum yok: metin devredilen uygulama (Harita) kendi Gemini'sini kullanır, asistan ayrıca sormaz.
+  (`beyin/`: `Gemini` istek/araç/cevap (saf, JVM testli), `GeminiHavuzu` (Harita `GeminiPool` birebir: çok anahtar +
+  model sırası, dolanı atlar), `Beyin` (HTTP, bağlam, bellek), `BeyinBecerisi`; SkillEvaluator'da `// ASISTAN:` kanca
+  `Yonlendirici.beyin` — devirden sonra, Dicio'nun yedeğinden önce. Araçlar: `asistan_komutu` (cümle sadeleşip beceri
+  sıralayıcısına döner), `uygulamaya_<ad>` (`METİN`), `<ad>_<komut>` (`KOMUT`). Ayarlar › "Beyin (Gemini)": aç/kapa,
+  anahtar(lar) — ekranda yalnız sonu —, model sırası (varsayılan `gemini-2.5-flash` › `gemini-flash-latest`).)
+- [x] Konuşma belleği (Harita `Conversation`): "oraya git", "ikincisi" gibi bağlama dayanan cümleler anlaşılır.
+  (`Konusma`, birebir: 6 tur, 3 dk sessizlikte unutur; her etkileşim yazılır — Dicio becerilerininki de —, devredilen
+  sözün cevabı uygulamanın `SÖYLE`'sinden gelir.)
+- [x] Bağlam: `DURUM`'dan (navigasyon, çalan video) Gemini'ye kısa özet gider. (`Baglam`: zaman, navigasyondaki ve
+  ekrandaki uygulama, çalan video — başlık, konum —; Kanallarım'a bağlanma en çok 1,5 sn beklenir.)
+- [x] Çift yorum yok: metin devredilen uygulama (Harita) kendi Gemini'sini kullanır, asistan ayrıca sormaz.
+  (Uyanma adıyla ve navigasyondaki devirle giden metin Gemini'ye uğramaz. Gemini uygulamaya devrederse yalnız hedefi
+  seçer, sözü aynen verir — "oraya" gibi göndermeleri geçmişteki adla açar —; yorum uygulamada.)
+- [ ] Bitti sayılır (telefonda): Ayarlar'a Gemini anahtarı girilince "Türkiye'nin en yüksek dağı hangisi?" sesli
+  cevaplanıyor; "beş dakikalık bir şey kur" gibi beceri dışı söz `asistan_komutu` ile zamanlayıcıya dönüyor; Harita
+  açıkken (navigasyonda değilken) "Kızılay'a nasıl giderim" Harita'ya veriliyor; ardından "peki oraya ne kadar sürer"
+  bağlamla anlaşılıyor.
 
 ### Faz 7 — İsteğe bağlı
 - [ ] openWakeWord ile Türkçe söz eğitimi (Piper Türkçe sesleriyle yapay örnek); Vosk ile CPU/pil karşılaştırması

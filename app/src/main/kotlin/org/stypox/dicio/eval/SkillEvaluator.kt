@@ -106,6 +106,7 @@ class SkillEvaluatorImpl(
                     Pair(input, skillWithResult)
                 }
             } ?: Yonlendirici.sonra(skillContext, utterances) // ASISTAN
+            ?: Yonlendirici.beyin(skillContext, utterances, skillHandler) { skillRanker } // ASISTAN: Gemini (Faz 6)
             ?: Pair(utterances[0], skillRanker.getFallbackSkill(skillContext, utterances[0]))
         } catch (throwable: Throwable) {
             addErrorInteractionFromPending(throwable)
@@ -144,6 +145,7 @@ class SkillEvaluatorImpl(
             val interactionPlan = output.getInteractionPlan(skillContext)
             addInteractionFromPending(output)
             output.getSpeechOutput(skillContext).let {
+                Yonlendirici.hatirla(chosenInput, it) // ASISTAN: konuşma belleği (Faz 6)
                 if (it.isNotBlank()) {
                     withContext (Dispatchers.Main) {
                         skillContext.speechOutputDevice.speak(it)

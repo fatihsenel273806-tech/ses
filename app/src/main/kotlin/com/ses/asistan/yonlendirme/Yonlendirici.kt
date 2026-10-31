@@ -1,6 +1,9 @@
 package com.ses.asistan.yonlendirme
 
 import com.ses.asistan.beceri.DevirBecerisi
+import com.ses.asistan.beyin.Beyin
+import com.ses.asistan.beyin.BeyinAyarlari
+import com.ses.asistan.beyin.BeyinBecerisi
 import com.ses.asistan.beceri.KanallarBecerisi
 import com.ses.asistan.beceri.KanallarSozleri
 import com.ses.asistan.beceri.NotlarBecerisi
@@ -8,12 +11,17 @@ import com.ses.asistan.beceri.NotlarSozleri
 import com.ses.asistan.kopru.Kopru
 import com.ses.asistan.ses.SesDurumu
 import org.dicio.skill.context.SkillContext
+import org.dicio.skill.standard.util.MatchHelper
+import org.stypox.dicio.di.SkillContextInternal
+import org.stypox.dicio.eval.SkillHandler
+import org.stypox.dicio.eval.SkillRanker
 import org.stypox.dicio.eval.SkillWithResult
 import org.stypox.dicio.eval.scoreAndWrapResult
 
 /**
- * Dicio'nun beceri seçimine iki kanca ([org.stypox.dicio.eval.SkillEvaluatorImpl], `// ASISTAN:`): becerilerden önce
- * uyanma adıyla doğrudan yönlendirme, hiçbiri anlamazsa metin devri. Karar [Yonlendirme]'de (saf mantık).
+ * Dicio'nun beceri seçimine kancalar ([org.stypox.dicio.eval.SkillEvaluatorImpl], `// ASISTAN:`): becerilerden önce
+ * uyanma adıyla doğrudan yönlendirme, hiçbiri anlamazsa metin devri, o da yoksa Gemini (Faz 6); her etkileşimden sonra
+ * konuşma belleği. Karar [Yonlendirme]'de (saf mantık).
  * Arka plan iş parçacığında çağrılır.
  */
 object Yonlendirici {
@@ -48,6 +56,26 @@ object Yonlendirici {
         val k = Yonlendirme.sonra(ilk, Kopru.adaylar(ctx.android)) as? Yonlendirme.Karar.Uygulamaya ?: return null
         return ilk to DevirBecerisi(k).scoreAndWrapResult(ctx, k.metin)
     }
+
+    /**
+     * 4. adım: Gemini (anahtar girildiyse; yoksa Dicio'nun yedek becerisi). Gemini asistanın becerisini isterse cümlesi
+     * aynı sıralayıcıyla ([sirala]) yeniden denenir.
+     */
+    fun beyin(
+        ctx: SkillContextInternal, utterances: List<String>, beceriler: SkillHandler, sirala: () -> SkillRanker,
+    ): Pair<String, SkillWithResult<*>>? {
+        val ilk = utterances.firstOrNull()?.takeIf { it.isNotBlank() } ?: return null
+        if (!BeyinAyarlari.al(ctx.android).hazir()) return null
+        val ornekler = beceriler.enabledSkillsInfo.value.orEmpty().map { runCatching { it.sentenceExample(ctx.android) }.getOrDefault("") }
+        val beceri = BeyinBecerisi(ilk, ornekler) { cumle ->
+            ctx.standardMatchHelper = MatchHelper(ctx.parserFormatter, cumle)
+            try { sirala().getBest(ctx, cumle) } finally { ctx.standardMatchHelper = null }
+        }
+        return ilk to beceri.scoreAndWrapResult(ctx, ilk)
+    }
+
+    /** Her etkileşimin sözü ve sesli cevabı konuşma belleğine (Gemini'nin geçmişi). */
+    fun hatirla(soz: String, cevap: String) = Beyin.hatirla(soz, cevap)
 
     /**
      * Uyanma servisi: uygulama adıyla uyanıldıysa ("Hey Harita", "Hey Kanallar") asistanın ekranı açılmaz; dinleme

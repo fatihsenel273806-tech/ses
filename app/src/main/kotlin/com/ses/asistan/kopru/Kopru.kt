@@ -15,6 +15,7 @@ import android.os.Looper
 import android.os.Message
 import android.os.Messenger
 import android.util.Log
+import com.ses.asistan.beyin.Beyin
 import com.ses.asistan.giris.Kulak
 import com.ses.asistan.ses.Ses
 import com.ses.asistan.ses.SesDurumu
@@ -79,6 +80,8 @@ object Kopru {
     fun bagli(paket: String) = baglilar.containsKey(paket)
     fun navigasyonda(paket: String) = baglilar[paket]?.navigasyon == true
     fun onde(paket: String) = baglilar[paket]?.onde == true
+    /** Navigasyonda olduğunu bildiren bağlı uygulamalar (Gemini bağlamı). */
+    fun navigasyondakiler(): List<String> = baglilar.values.filter { it.navigasyon }.map { it.paket }
     /** Ekranda olduğunu bildiren bağlı uygulama (yoksa null). */
     fun ondeOlan(): String? = baglilar.values.firstOrNull { it.onde }?.paket
 
@@ -108,6 +111,8 @@ object Kopru {
                 val metin = d.getString(Protokol.METIN_ALANI).orEmpty()
                 val tur = tur(d.getString(Protokol.TUR)) ?: SpeechQueue.Kind.CEVAP
                 val isaret = d.getBoolean(Protokol.ISARET, true)
+                // devredilen sözün cevabı konuşma belleğine (Faz 6)
+                if (tur == SpeechQueue.Kind.CEVAP || tur == SpeechQueue.Kind.BILGI) Beyin.uygulamaCevabi(paket, metin)
                 main.post {
                     Ses.al(app).soyle(metin, tur, kaynak = paket, isaret = isaret) { bayat ->
                         gonder(cevap, Protokol.SOYLENDI) { putInt(Protokol.KIMLIK, kimlik); putBoolean(Protokol.BAYAT, bayat) }

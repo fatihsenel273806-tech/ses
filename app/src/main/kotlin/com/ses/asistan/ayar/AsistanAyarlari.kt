@@ -83,7 +83,7 @@ fun asistanSesi() = ListSetting.Value(
     icon = Icons.Default.RecordVoiceOver,
 )
 
-/** Asistan bölümü (ses ve uyanma). */
+/** Asistan bölümü (ses, uyanma, bağlı uygulamalar, Gemini). */
 fun LazyListScope.asistanAyarlari() {
     item { SettingsCategoryTitle("Asistan sesi") }
     item { SesBolumu() }
@@ -91,6 +91,8 @@ fun LazyListScope.asistanAyarlari() {
     item { UyanmaBolumu() }
     item { SettingsCategoryTitle("Bağlı uygulamalar") }
     item { BagliBolumu() }
+    item { SettingsCategoryTitle("Beyin (Gemini)") }
+    item { BeyinBolumu() }
 }
 
 /**

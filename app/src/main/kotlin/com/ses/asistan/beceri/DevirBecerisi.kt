@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import com.ses.asistan.beyin.Beyin
 import com.ses.asistan.kopru.Kopru
 import com.ses.asistan.yonlendirme.Yonlendirme
 import org.dicio.skill.context.SkillContext
@@ -36,6 +37,7 @@ class DevirBecerisi(private val karar: Yonlendirme.Karar.Uygulamaya) : Skill<Uni
     override suspend fun generateOutput(ctx: SkillContext, inputData: Unit): SkillOutput {
         val ad = uygulamaAdi(ctx.android, karar.paket)
         if (!Kopru.metinVer(karar.paket, karar.metin, karar.uyanma)) return Cikti("$ad uygulamasına ulaşılamadı.")
+        Beyin.devredildi(karar.paket)
         // cevabı uygulama kendisi söyler; ekranda yalnız nereye gittiği
         return Cikti("", "$ad: ${karar.metin}")
     }

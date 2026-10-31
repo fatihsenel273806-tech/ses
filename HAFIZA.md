@@ -133,6 +133,18 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
   `FAIL_ON_PROJECT_REPOS` kullandığı için proje depolarına ayna eklenmez. Kotlin denetimi için kotlinc
   (`github.com/JetBrains/kotlin/releases`) ve Robolectric `android-all` jar'ı Google aynasından iner.
 
+- **2026-10-31 — Faz 6: beyin (Gemini)**. Yönlendirmenin 4. adımı `Yonlendirici.beyin` (SkillEvaluator kancası,
+  devirden sonra, Dicio'nun yedeğinden önce); anahtar yoksa ya da kapalıysa hiç kurulmaz, Dicio'nun "anlamadım"ı kalır.
+  Harita'dan birebir taşınanlar: `Conversation` → `Konusma` (6 tur, 3 dk), `GeminiPool` → `GeminiHavuzu` (model önce,
+  dolan çift Pasifik gece yarısına / Google'ın dediği süreye kadar atlanır), istek biçimi (`GeminiClient.interpret`:
+  geçmiş + "Durum: … Kullanıcı: …", `fastThinking`). Tek tur function calling (sonuç Gemini'ye geri gönderilmez:
+  uygulamanın cevabını uygulama ya da `SONUÇ` söyler). Araçlar: `asistan_komutu(cumle)` — Gemini cümleyi sadeleştirir,
+  aynı `SkillRanker.getBest` yeniden dener (yedek beceri olmadan, döngü yok); `uygulamaya_<uyanma|ad>(metin)` devir
+  kabul eden ya da uyanma adı olan uygulamaya; `<ad>_<komut>(sorgu)` `devir="hayir"` uygulamanın komutlarına (Dosya
+  Okuyucu). Fonksiyon adı ASCII (`[a-z0-9_]`), çakışırsa `_2`. Bellek: her etkileşimin sözü + sesli cevabı (Dicio
+  becerileri dahil); devredilen sözün cevabı uygulamanın 30 sn içindeki `SÖYLE(cevap|bilgi)`'sinden.
+  Bulutta gerçek Gemini çağrısı yapılmadı (anahtar yok): istek/cevap biçimi JVM testinde, telefonda denenecek.
+
 ## Reddedilen / değişen yollar
 
 - **Ortak kütüphane (her uygulamaya giren Kotlin AAR + Flutter eklentisi)** — 2026-10-31 sabah planlandı, aynı gün

@@ -20,7 +20,8 @@ yazar. Asistan tarafı: `app/src/main/kotlin/com/ses/asistan/kopru/`. Harita tar
   - `uyanma`: doğrudan uyanma adı ("Hey Harita …"). Vosk küçük Türkçe modelinin sözlüğünde olmalı (HAFIZA).
   - `devir`: asistanın hiçbir becerisi anlamadığında metnin bu uygulamaya ne zaman verileceği: `hayir`,
     `navigasyonda`, `onde` (ekrandayken ya da navigasyonda), `her_zaman`.
-  - `komut`: Faz 6'da Gemini araç bildirimi olur (ad → Türkçe açıklama).
+  - `komut`: Gemini araç bildirimi (ad → Türkçe açıklama; Faz 6, aşağıda "Yönlendirme" 4). `aciklama` kısa ve
+    eylem söyleyen bir Türkçe cümle olmalı: Gemini aracı buna bakarak seçer.
 - Asistan bunları `PackageManager` ile okur. Sonuç paketin güncellenme anına göre önbellekte tutulur: uygulama kurulunca
   ya da güncellenince kendiliğinden yeniden okunur.
 
@@ -109,7 +110,13 @@ yeniden kurulur.
    - Uygulama adıyla uyanılınca asistanın ekranı açılmaz, cevap sesli gelir.
 2. Dicio becerileri (bizimkiler dahil).
 3. Hiçbiri anlamazsa metin devri: devri o an kabul eden uygulama (önce navigasyondaki).
-4. Gemini (Faz 6).
+4. Gemini (Faz 6; anahtar ayarlardan girildiyse, yoksa Dicio'nun "anlamadım"ı). Araçları: asistanın kendi becerileri
+   (`asistan_komutu`: cümle sadeleşip beceri sıralayıcısında yeniden denenir), `devir` kabul eden ya da uyanma adı olan
+   her uygulama için `uygulamaya_<ad>(metin)` (komut açıklamaları araç açıklamasına girer; uygulamaya `METİN` gider,
+   uygulama kendi komut anlayışıyla yorumlar), `devir="hayir"` uygulamanın her `komut`'u için `<ad>_<komut>(sorgu)`
+   (`KOMUT`). Bağlam: bağlı uygulamaların `navigasyon`/`onde` durumu ve çalan video. Devredilen sözün cevabı
+   (uygulamanın 30 sn içindeki `SÖYLE(cevap|bilgi)`'si) konuşma belleğine yazılır. 1. ve 3. adımda devredilen metin
+   Gemini'ye hiç uğramaz (çift yorum yok).
 
 ## Uygulama tarafında düşme kuralları
 
