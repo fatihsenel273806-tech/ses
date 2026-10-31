@@ -31,6 +31,10 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
   kimlik/ad soneki (Dicio `gitBranch()`) kaldırıldı. CI: `apk.yml` (JDK 21, testler → release → imza denetimi →
   `son-surum`); Dicio'nun `ci.yml`'si yalnız elle. Bulutta SDK: `/opt/android-sdk` (cmdline-tools, platform 36,
   build-tools 35), `local.properties`'te `sdk.dir`.
+- **Derleme tuzakları (Faz 0)**: `dicio-numbers` Java 17 araç zinciri ister (JDK 21 yetmez; bulutta
+  `apt-get install openjdk-17-jdk-headless`, CI'da setup-java 17+21). Bulut oturumunda Maven Central 429 verebilir;
+  çözüm yalnız oturuma özgü `~/.gradle/init.d/ayna.gradle` ile Google aynası
+  (`maven-central.storage-download.googleapis.com/maven2`), depoya girmez. İlk tam derleme ~13 dk.
 
 ## Reddedilen / değişen yollar
 
