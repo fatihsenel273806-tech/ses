@@ -1,6 +1,10 @@
 package com.ses.asistan.yonlendirme
 
+import com.ses.asistan.beceri.AcmaBecerisi
 import com.ses.asistan.beceri.DevirBecerisi
+import com.ses.asistan.beceri.DosyalarInfo
+import com.ses.asistan.beceri.Kanallar
+import com.ses.asistan.beceri.Notlar
 import com.ses.asistan.beyin.Beyin
 import com.ses.asistan.beyin.BeyinAyarlari
 import com.ses.asistan.beyin.BeyinBecerisi
@@ -25,6 +29,14 @@ import org.stypox.dicio.eval.scoreAndWrapResult
  * Arka plan iş parçacığında çağrılır.
  */
 object Yonlendirici {
+    /** [Yonlendirme.ACILAN] anahtarlarının paketi ve söylenen adı. */
+    private val ACILAN = mapOf(
+        "harita" to ("com.harita.ankara" to "Harita"),
+        Yonlendirme.KANALLAR to (Kanallar.PKG to "Kanallarım"),
+        Yonlendirme.NOTLAR to (Notlar.PKG to "Notlar"),
+        "dosyalar" to (DosyalarInfo.PKG to "Dosya Okuyucu"),
+    )
+
     /** 1. adım; null: Dicio becerileri sırayla denenir. */
     fun once(ctx: SkillContext, utterances: List<String>): Pair<String, SkillWithResult<*>>? {
         val ad = SesDurumu.uyanmaAdiAl()
@@ -33,6 +45,10 @@ object Yonlendirici {
         val ilk = utterances.firstOrNull() ?: return null
         return when (val k = Yonlendirme.once(ilk, ad, adaylar)) {
             null -> null
+            is Yonlendirme.Karar.Ac -> {
+                val (paket, adi) = ACILAN.getValue(k.ad)
+                ilk to AcmaBecerisi(paket, adi).scoreAndWrapResult(ctx, ilk)
+            }
             is Yonlendirme.Karar.Uygulamaya -> ilk to DevirBecerisi(k).scoreAndWrapResult(ctx, k.metin)
             is Yonlendirme.Karar.Kanallar -> {
                 // tanıyıcının seçeneklerinden Kanallarım komutu olan (yoksa ilki): "anlamadım" da bizim beceriden

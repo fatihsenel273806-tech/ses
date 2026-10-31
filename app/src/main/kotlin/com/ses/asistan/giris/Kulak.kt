@@ -97,7 +97,15 @@ class Kulak private constructor(private val ctx: Context) {
 
     private fun recognizer(): SpeechRecognizer {
         rec?.let { return it }
-        val r = SpeechRecognizer.createSpeechRecognizer(ctx)
+        // varsayılan tanıyıcı asistanın kendisiyse döngü olurdu: Google'ınki açıkça seçilir (TaniyiciSecimi)
+        val secilen = TaniyiciSecimi.sec(
+            android.provider.Settings.Secure.getString(ctx.contentResolver, "voice_recognition_service"), ctx.packageName,
+        ) {
+            ctx.packageManager.queryIntentServices(Intent(android.speech.RecognitionService.SERVICE_INTERFACE), 0)
+                .map { "${it.serviceInfo.packageName}/${it.serviceInfo.name}" }
+        }
+        val r = secilen?.let { android.content.ComponentName.unflattenFromString(it) }
+            ?.let { SpeechRecognizer.createSpeechRecognizer(ctx, it) } ?: SpeechRecognizer.createSpeechRecognizer(ctx)
         r.setRecognitionListener(object : RecognitionListener {
             override fun onReadyForSpeech(params: Bundle?) {}
             override fun onBeginningOfSpeech() {}

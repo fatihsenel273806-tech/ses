@@ -46,6 +46,10 @@ class SkillHandler @Inject constructor(
 ) {
     // TODO improve id handling (maybe just use an int that can point to an Android resource)
     val allSkillInfoList = listOf(
+        // ASISTAN: bizim beceriler önde — eşit puanda listede önce gelen kazanır ("not al" yol tarifi sanılıyordu)
+        KanallarInfo, // ASISTAN
+        NotlarInfo, // ASISTAN
+        DosyalarInfo, // ASISTAN
         WeatherInfo,
         SearchInfo,
         LyricsInfo,
@@ -61,9 +65,6 @@ class SkillHandler @Inject constructor(
         TranslationInfo,
         NotifyInfo,
         FlashlightInfo,
-        KanallarInfo, // ASISTAN
-        NotlarInfo, // ASISTAN
-        DosyalarInfo, // ASISTAN
     )
 
     private val fallbackSkillInfoList = listOf(

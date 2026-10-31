@@ -22,7 +22,8 @@ import org.dicio.skill.skill.Specificity
 /**
  * Dosya Okuyucu becerisi (PLAN Faz 5): "X dosyasını aç", "son dosyayı aç", "sesli oku", "okumayı durdur", "özetle".
  * Komut Dosya Okuyucu'nun kişisel derlemesindeki köprü servisine `KOMUT` olarak gider (PROTOKOL.md › "Dosya Okuyucu
- * komutları"); arama, açma, sesli okuma (uygulamanın kendi `tts_service`'i) ve özet (uygulamanın Gemini'si) orada.
+ * komutları"); arama, açma, sesli okuma (uygulamanın kendi `tts_service`'i) ve özet (uygulamanın Gemini'si) orada;
+ * özet Dosya Okuyucu'nun özet sayfasında açılır.
  * Asistan yalnız cevabı söyler ve istenen ekranı açar. Genel (dağıtılan) Dosya Okuyucu'da köprü yoktur.
  */
 object DosyalarInfo : SkillInfo("dosyalar") {
@@ -49,8 +50,8 @@ class DosyalarBecerisi : Skill<Komut?>(DosyalarInfo, Specificity.HIGH) {
         val sonuc = withContext(Dispatchers.IO) {
             Kopru.hazirla(ctx.android)
             if (Uygulamalar.bul(ctx.android, DosyalarInfo.PKG) == null) null
-            // özet Gemini'yi bekler: cevap gecikebilir (uzun özet ayrıca SÖYLE ile de gelebilir)
-            else Kopru.komut(DosyalarInfo.PKG, komut.ad, komut.sorgu, if (komut is Komut.Ozetle) 45_000L else 10_000L)
+            // okuma ve özet Dosya Okuyucu'da başlar (K7): köprü yalnız dosyayı bulup bağlantıyı verir, beklemek gerekmez
+            else Kopru.komut(DosyalarInfo.PKG, komut.ad, komut.sorgu, 10_000L)
                 ?: Kopru.Sonuc("Dosya Okuyucu cevap vermedi.", false)
         } ?: return Cikti("Dosya Okuyucu'nun kişisel sürümü kurulu değil.")
         return Cikti(sonuc.metin.ifBlank { if (sonuc.tamam) "Tamam." else "Olmadı." })

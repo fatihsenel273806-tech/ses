@@ -130,7 +130,7 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
   (`viewer_screen.dart` `_tts`, `reader_screen.dart`); Kotlin'den başlatılamaz, Dart kancası gerekir → PLAN K7 (açık).
   Cümleler `DosyalarSozleri`: "dosya/belge/pdf…" sözcüğü şart (yoksa "haritayı aç", "son notumu oku" buraya düşerdi).
 - **2026-10-31 — Bu oturumda Dosya Okuyucu'ya push izni verilmedi** (`add_repo` push reddedildi; okuma açık depo
-  olarak var). İş yerel commit olarak `yamalar/dosya-okuyucu-faz5.patch`'te: o depoda `git am`, `tool/check_kotlin.sh`
+  olarak var). İş yerel commit olarak `yamalar/dosya-okuyucu-faz5.patch`'teydi (Faz 7'de uygulanıp silindi): o depoda `git am`, `tool/check_kotlin.sh`
   (`ANDROID_ALL_JAR` ile), push. Yama yalnız Dosya Okuyucu için yazılmış yeni koddur; bu deponun (GPL) kodundan
   türetilmedi.
 - **Bulut derleme tuzağı (init betiği)**: `settingsEvaluated` Dicio'nun settings eklentisini (`includegit`, jgit) çözmek
@@ -150,6 +150,26 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
   Okuyucu). Fonksiyon adı ASCII (`[a-z0-9_]`), çakışırsa `_2`. Bellek: her etkileşimin sözü + sesli cevabı (Dicio
   becerileri dahil); devredilen sözün cevabı uygulamanın 30 sn içindeki `SÖYLE(cevap|bilgi)`'sinden.
   Bulutta gerçek Gemini çağrısı yapılmadı (anahtar yok): istek/cevap biçimi JVM testinde, telefonda denenecek.
+
+- **2026-10-31 — Faz 7**. **K6 varsayılan asistan, Dicio'nun `ACTION_ASSIST` etkinliğiyle** (VoiceInteractionService
+  yok; aşağıda reddedilen yol). Rol uygunluğu: PermissionController `ACTION_ASSIST` etkinliği olan paketi de aday
+  sayar; SystemUI asistan bileşeni etkinlikse `startAssistActivity` ile açar (güç tuşu). Girişler: `ASSIST`,
+  `VOICE_COMMAND` (araç Bluetooth'u, Dicio), kulaklık uzun basma `WEB_SEARCH` / `VOICE_SEARCH_HANDS_FREE` (bizim ek,
+  `giris/VarsayilanAsistan.kt`); hepsi kilit ekranında açılır (MainActivity'de `// ASISTAN:` iki kanca). Rol istek
+  kutusuyla verilmez, Ayarlar › "Varsayılan asistan" sistem ekranını açar. **Kulak artık varsayılan tanıyıcı
+  asistanın kendisiyse Google'ınkini açıkça seçer** (`TaniyiciSecimi`; yoksa Kulak → Dicio `SttService` → Kulak döngüsü).
+  **K7 (a)**: Dosya Okuyucu'ya Dart kancası (`oku:`/`ozet:`/`durdur:` bağlantıları, `asistan_komutlari.dart`);
+  Faz 5 yaması da uygulandı, ikisi `kaimau1/dosya-okuyucu` main'inde. **K5**: Vosk kalır (telefonda ölçüm). Dicio
+  güncelleme rutini `tool/dicio_guncelle.sh`; upstream 2026-10-31'de `3d1c154`'te, yeni commit yok.
+- **2026-11-01 — Telefon geri bildirimi: uygulama açılamıyordu** (kullanıcı: "Notları açamıyor … kanallarımı
+  açamıyor, sadece arka planda son videoyu devam ettiriyor; ne dersem yapabilmeli"). Kök nedenler: (1) cümlenin
+  başındaki "notlar" uyanma adı sayılıp kalan "uygulamasını aç" zorla Notlar becerisine gidiyordu ("anlamadım");
+  (2) "not al": Dicio'nun Türkçe yol tarifi cümlesi `.where. … al` "not"u yer adı sandı; puanlar eşit, Dicio sıralayıcısı
+  eşitlikte listede önce geleni seçer ve bizim beceriler sondaydı; (3) "kanallarımı aç": Harita `MediaWords`'ten
+  birebir taşınan RESUME kuralı (`kanallarım… aç` → sürdür). Düzeltme: yönlendirmenin 0. adımı adıyla açma
+  (`Yonlendirme.acilacak`, `AcmaBecerisi`, launcher niyeti; arka planda "üzerinde göster" izni gerekir), bizim
+  beceriler `SkillHandler` listesinin başında. Ders: Dicio'nun genel cümleleri (`.where.`, `.what.` yakalayıcıları)
+  kısa Türkçe komutları yutar; yeni beceri eklerken Dicio'nun cümle dosyalarıyla çakışma denetlenir.
 
 ## Reddedilen / değişen yollar
 
@@ -175,6 +195,11 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
   tetikliyordu. Yeni adlar yalnız son sonuçla karar verir; "harita" Harita'daki gibi kısmi sonuçla da (ölçülmüş).
 - **Ölçüm betiğinde geç bağlanan lambda** (bulundu, düzeltildi): Python'da döngüde kurulan `lambda: wav(..., ek)`
   son `ek`'i kullanır; üç varyant da aynı (yavaş) sesle ölçülmüştü, "hey asistan" kaçıyor sanıldı. `lambda ek=ek:`.
+
+- **VoiceInteractionService ile varsayılan asistan (K6)** — 2026-10-31 düşünüldü, yapılmadı: asistan "ses etkileşim
+  servisi" olunca Android `VOICE_RECOGNITION_SERVICE`'i de onun `recognitionService`'ine (Dicio `SttService`) çevirir;
+  Notlar'ın kendi `DeviceSpeech`'i ve Harita'nın yedek tanıması varsayılan tanıyıcıyı kullandığından asistandan
+  geçerdi (D5 ihlali). Kilit ekranı ve güç tuşu `ACTION_ASSIST` etkinliğiyle de çalışıyor.
 
 ## Taşınacak ses tuzakları (kanıtlı; kaynağı Harita/Notlar CLAUDE.md ve kodu)
 
@@ -216,8 +241,11 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
 - 2026-10-31 "KOMUT/SONUÇ" (Faz 5; sürüm 1 kaldı, ek iletiler): asistan → uygulama `KOMUT` (107: `kimlik`, `ad`,
   `sorgu`), uygulama → asistan `SONUÇ` (9: `kimlik`, `metin`, `tamam`, `pi`). İzin
   `com.dosyaokuyucu.dosya_okuyucu.izin.ASISTAN` (knownCerts: asistan). Değişen: asistan (`Kopru.komut`,
-  `uses-permission`, Dosyalar becerisi), Dosya Okuyucu (kişisel köprü; yama `yamalar/`'da). Harita, Kanallarım, Notlar
+  `uses-permission`, Dosyalar becerisi), Dosya Okuyucu (kişisel köprü; Faz 7'de main'de). Harita, Kanallarım, Notlar
   etkilenmez.
 - 2026-10-31 "Notlar yayınları" (Faz 4; sürüm değişmedi, Messenger kanalına dokunulmadı): `HARITA_NOT` +
   `ASISTAN_SORGU`, izin `dev.kaimau.notlar.izin.ASISTAN` (knownCerts: asistan, Harita, Kanallarım). Değişen:
   Notlar (kişisel kaynak kümesi), asistan (`uses-permission`, Notlar becerisi), Harita ve Kanallarım (`uses-permission`).
+- 2026-10-31 "Dosya Okuyucu oku/ozetle/durdur" (K7; sürüm değişmedi): `SONUÇ.pi` artık `oku:/yol`, `ozet:/yol`,
+  `durdur:` bağlantısı da olabilir (Dosya Okuyucu'nun Dart kancası karşılar). Değişen: Dosya Okuyucu (köprü + Dart),
+  asistan (özet için 45 sn bekleme kalktı). Harita, Kanallarım, Notlar etkilenmez.

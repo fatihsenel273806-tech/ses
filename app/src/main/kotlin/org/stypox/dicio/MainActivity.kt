@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.Intent
 import android.content.Intent.ACTION_ASSIST
 import android.content.Intent.ACTION_VOICE_COMMAND
+import com.ses.asistan.giris.VarsayilanAsistan // ASISTAN
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -68,7 +69,8 @@ class MainActivity : BaseActivity() {
 
     private fun handleWakeWordTurnOnScreen(intent: Intent?) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1 &&
-            intent?.action == ACTION_WAKE_WORD
+            (intent?.action == ACTION_WAKE_WORD ||
+                VarsayilanAsistan.kilitteGoster(intent)) // ASISTAN: güç tuşu, kulaklık, araç düğmesi (K6)
         ) {
             // Dicio was started anew based on a wake word,
             // turn on the screen to let the user see what is happening
@@ -182,7 +184,7 @@ class MainActivity : BaseActivity() {
         private fun isAssistIntent(intent: Intent?): Boolean {
             return when (intent?.action) {
                 ACTION_ASSIST, ACTION_VOICE_COMMAND -> true
-                else -> false
+                else -> VarsayilanAsistan.ekGiris(intent) // ASISTAN: kulaklık düğmesi (K6)
             }
         }
     }

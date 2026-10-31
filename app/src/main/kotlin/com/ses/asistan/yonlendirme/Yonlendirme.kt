@@ -4,6 +4,7 @@ import java.util.Locale
 
 /**
  * Söylenenin nereye gideceği (PLAN §1). Android'e bağlı değil: JVM testiyle sınanır. Sıra:
+ *  0. [once]: "notlar uygulamasını aç", "kanallarımı aç", "Hey Harita, aç" → o uygulama açılır ([Karar.Ac]).
  *  1. [once]: uyanma adı ("Hey Harita …", "Hey Kanallar …", "Hey Notlar …"); cümlenin başında söylenen ad da sayılır. (Uygulamanın
  *     kendi dinleme isteği — `DİNLE`, `DİKTE` — buraya hiç gelmez: duyulan doğrudan o uygulamaya gider.)
  *  2. Dicio becerileri (bizimkiler dahil) — bu sınıfın dışında, SkillEvaluator'da.
@@ -52,6 +53,32 @@ object Yonlendirme {
         data class Kanallar(val metin: String) : Karar
         /** "Hey Notlar …": yalnız Notlar becerisi dinlenir (Notlar'ın köprü servisi yoksa). */
         data class Notlar(val metin: String) : Karar
+        /** Uygulamanın kendisi açılır; [ad]: [ACILAN]'daki anahtar (harita, kanallar, notlar, dosyalar). */
+        data class Ac(val ad: String) : Karar
+    }
+
+    /**
+     * Adıyla açılabilen bağlı uygulamalar ve söylenişleri (ekli/eksiz). Telefonda: "notlar uygulamasını aç" Notlar
+     * becerisine, "kanallarımı aç" kaldığı yerden sürdürmeye düşüyordu (kullanıcı 2026-11-01).
+     */
+    val ACILAN = linkedMapOf(
+        "harita" to "harita(?:yı|ya)?",
+        KANALLAR to "kanallar(?:ım)?(?:ı)?|kanallarım'?ı",
+        NOTLAR to "not(?:lar(?:ım)?(?:ı)?)?|notlar'?ı",
+        "dosyalar" to "dosya okuyucu(?:'?yu|yu)?",
+    )
+    private const val UYG = "(?:uygulama(?:sı|sını|yı)?|app'?i?)"
+    private const val ACMA = "(?:aç|başlat|çalıştır|göster|getir)(?:ır mısın|ar mısın|abilir misin|ır mısınız)?(?: lütfen)?"
+    private val AC_ADLI = ACILAN.map { (ad, r) -> ad to Regex("^(?:hey |ey )?(?:$r)(?: $UYG)? $ACMA$") }
+    private val AC_YALIN = Regex("^(?:$UYG )?$ACMA$")
+    private val TEMIZ = Regex("[.!?,;:]")
+    private val BOSLUK = Regex("\\s+")
+
+    /** "notlar uygulamasını aç" → notlar. [uyanmaAdi] verilmişse ("Hey Notlar") yalnız "aç" / "uygulamayı aç" da yeter. */
+    fun acilacak(metin: String, uyanmaAdi: String?): String? {
+        val t = metin.lowercase(TR).replace(TEMIZ, " ").replace(BOSLUK, " ").trim()
+        AC_ADLI.firstOrNull { it.second.matches(t) }?.let { return it.first }
+        return uyanmaAdi?.takeIf { it in ACILAN && AC_YALIN.matches(t) }
     }
 
     private val TR = Locale("tr")
@@ -69,8 +96,10 @@ object Yonlendirme {
     fun once(metin: String, uyanmaAdi: String?, adaylar: List<Aday>): Karar? {
         val adlar = adaylar.mapNotNull { it.uyanma } + KANALLAR + NOTLAR
         val bas = basindakiAd(metin, adlar)
+        acilacak(metin, uyanmaAdi?.takeIf { it != ASISTAN })?.let { return Karar.Ac(it) }
         val ad = uyanmaAdi?.takeIf { it != ASISTAN } ?: bas?.first ?: return null
         val kalan = if (bas != null && bas.first == ad) bas.second else metin.trim()
+        acilacak(kalan, ad)?.let { return Karar.Ac(it) }
         if (ad == KANALLAR) return Karar.Kanallar(kalan)
         val a = adaylar.firstOrNull { it.uyanma == ad } ?: return if (ad == NOTLAR) Karar.Notlar(kalan) else null
         return Karar.Uygulamaya(a.paket, kalan, uyanma = uyanmaAdi != null)

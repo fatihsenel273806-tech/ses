@@ -25,7 +25,26 @@
         android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
 
+    <!-- Kulak, varsayılan tanıyıcı asistanın kendisiyse Google'ınkini arar (TaniyiciSecimi; Android 11+ görünürlük) -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+
     <application>
+        <!-- K6 varsayılan asistan: Dicio'nun ASSIST / VOICE_COMMAND'ına ek, kulaklık düğmesine uzun basma
+             (ekran açıkken WEB_SEARCH, kilitliyken VOICE_SEARCH_HANDS_FREE). VarsayilanAsistan.kt -->
+        <activity
+            android:name="org.stypox.dicio.MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.speech.action.WEB_SEARCH" />
+                <action android:name="android.speech.action.VOICE_SEARCH_HANDS_FREE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <!-- K3 elle dinleme: uyanma bildirimindeki "Dinle / bırak" düğmesi -->
         <receiver
             android:name="com.ses.asistan.giris.ElleDinleAlici"

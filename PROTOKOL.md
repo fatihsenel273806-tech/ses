@@ -153,9 +153,9 @@ Servis iletiyi gönderenin paketini de denetler (yalnız `com.ses.asistan`).
 | `ad` | `sorgu` | Uygulamada |
 |---|---|---|
 | `ac` | dosya adında geçecek söz; boş: son açılan | MediaStore ad araması (Gemini işlevleriyle aynı AI kapsamı: kilitli ve AI dışı klasörler dönmez), en yenisi; `pi` = `file:` bağlantısı |
-| `oku` | boş ya da dosya adı | uygulamanın kendi sesli okuması (`TtsService`) — **henüz bağlı değil** (PLAN K7) |
-| `durdur` | — | sesli okumayı durdurur — **henüz bağlı değil** (K7) |
-| `ozetle` | boş ya da dosya adı | uygulamanın Gemini'siyle özet; uzun sonuç `SÖYLE(cevap)` ile de gelebilir — **henüz bağlı değil** (K7) |
+| `oku` | boş (son açılan) ya da dosya adı | `pi` = `oku:/yol`: uygulama açılır, görüntüleyicinin kendi sesli okuması (`TtsService`) başlar (Dart kancası, K7) |
+| `durdur` | — | `pi` = `durdur:`: açık görüntüleyicinin okuması duraklar |
+| `ozetle` | boş (son açılan) ya da dosya adı | `pi` = `ozet:/yol`: uygulamanın AI özeti açılır (kayıtlıysa anında); özet asistanda okunmaz |
 
 ## Değişiklik kuralı
 

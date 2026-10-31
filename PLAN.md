@@ -11,9 +11,9 @@ Dosya Okuyucu) kendi ses özellikleriyle devam eder; onlardaki asistan köprüs�
 | 2 | Köprü protokolü + Kanallarım becerisi (Kanallarım'da değişiklik yok) | 🟨 telefonda deneme bekliyor |
 | 3 | Harita geçişi: ses asistanda, yönlendirme mantığı Harita'da | 🟨 telefonda ölçüm bekliyor; Harita'nın kendi ses kodu ölçümden sonra silinir |
 | 4 | Notlar köprüsü (yalnız kişisel derleme) | 🟨 telefonda deneme bekliyor |
-| 5 | Dosya Okuyucu köprüsü (yalnız kişisel derleme) | 🟨 asistan tarafı main'de; Dosya Okuyucu yaması push izni bekliyor (`yamalar/`), sesli oku/özet K7 |
+| 5 | Dosya Okuyucu köprüsü (yalnız kişisel derleme) | 🟨 kod iki depoda main'de (aç, son dosya, sesli oku/durdur, özet — K7); telefonda deneme bekliyor |
 | 6 | Beyin: Gemini yedek beceri, bağlı uygulamaların araçları, konuşma belleği | 🟨 kod main'de; telefonda Gemini anahtarıyla deneme bekliyor |
-| 7 | İsteğe bağlı: openWakeWord, araç/Bluetooth düğmesi, varsayılan asistan, Dicio güncellemeleri | ⬜ |
+| 7 | İsteğe bağlı: openWakeWord, araç/Bluetooth düğmesi, varsayılan asistan, Dicio güncellemeleri | 🟨 kod main'de (varsayılan asistan, kulaklık/araç düğmesi, güncelleme rutini); openWakeWord ve düğmeler telefonda |
 
 **Otomatik zincir (kullanıcı 2026-10-31):** "1 faz yap, main'e pushla, sonra yeni oturumda diğer fazı başlat, o da
 bitirip main'e merge etsin; kalan işler bitinceye kadar otomatik." Her oturum bir faz yapar, `main`'e alır ve bir
@@ -23,6 +23,43 @@ Harita'nın ses kodu ölçüm geçmeden silinmez (§8).
 **Protokol:** kullanıcı "Faz N'i yap" deyince yalnız o faz yapılır. KARAR maddelerinde önce sorulur. Bitince
 maddeler `[x]`, Durum tablosu ✅, HAFIZA güncellenir, commit + push. Kendiliğinden sonraki faza geçilmez. Başka
 depoya dokunan fazda o deponun CLAUDE.md kuralları da geçerlidir (Harita: telefonda ölçüm, satır sınırı, graphify).
+
+## Telefonda yapılacaklar (zincir bitti, 2026-11-01)
+
+Bulutta yapılabilen kod işi bitti; kalan her madde telefonda deneme ya da ölçüm ister. Otomatik zincir burada durdu.
+
+**APK'lar ve kurulum sırası.** Köprü izinleri `knownSigner`: izni kullanan uygulama, izni tanımlayan uygulamadan
+SONRA kurulmalı. Harita ile asistan birbirinin iznini kullandığı için sıra: önce hepsi bir kez, sonra 3–5 bir kez
+daha (üzerine güncelleme; ayarlar kalır).
+1. **Notlar** (kişisel): `kaimau1/not` Release (CI `NOTLAR_KISISEL=1` ile derliyor) — `dev.kaimau.notlar.izin.ASISTAN`.
+2. **Dosya Okuyucu** (kişisel): `kaimau1/dosya-okuyucu` › Actions › "APK Derle & Release" › elle çalıştır,
+   `kisisel: true` → artifact (Release'e girmez; `nightly` genel sürümdür, köprüsüzdür).
+3. **Asistan**: `fatihsenel273806-tech/ses` Release `son-surum`.
+4. **Harita**: kendi Release'i.
+5. **Kanallarım**: kendi Release'i.
+
+**Asistan'da ilk ayarlar** (Ayarlar › Asistan): uyanma modeli (36 MB) insin, mikrofon izni; "Diğer uygulamaların
+üzerinde göster" + HyperOS "arka planda açılır pencere"; bildirim erişimi; "İlgili uygulamalar açıkken" kipi için
+kullanım erişimi; "Varsayılan asistan" › Asistan (HyperOS: güç düğmesini basılı tut › asistan); Gemini anahtarı.
+HyperOS: pil "kısıtlama yok", otomatik başlatma.
+
+**Denenecekler** (sonucu HAFIZA'ya; 🟨 maddeler buna göre kapanır):
+- Faz 0: saat, zamanlayıcı, hesap sesle.
+- Faz 1 (ölçüm): boşta CPU (`adb shell top -b -n 1 -p $(adb shell pidof com.ses.asistan)`) ve bir saatlik pil;
+  çalan video durmuyor, bip yok; olumsuz örneklerde yanlış tetiklenme yok; dikte cümle arasında kesilmiyor.
+- Uygulama açma (2026-11-01 düzeltmesi): "notlar uygulamasını aç", "kanallarımı aç", "haritayı aç", "dosya
+  okuyucuyu aç", "Hey Notlar, aç"; "not al" dikteye geçiyor (yol tarifi değil).
+- Faz 2: "Hey Kanallar, geri sar", "ne çalıyor", "X videosunu aç", "videoya not al" (not Notlar'a ulaşıyor).
+- Faz 3 (ölçüm, Harita CLAUDE.md yöntemiyle): dönüş talimatı gecikmesi, navigasyonda CPU ~%4, `am force-stop
+  com.ses.asistan` sonrası yönlendirme Android sesiyle sürüyor, görüşmede mikrofon bırakılıyor, Harita kapalıyken
+  "Hey Harita, Kızılay'a git", yeniden başlatma sonrası yalnız Harita açılınca "Hey Harita" (kilitliyken de).
+  **Geçerse** Harita'nın kendi ses kodu silinir (Faz 3 "Harita'dan kalkanlar"; ölçümden önce silinmez, §8).
+- Faz 4: "not al …", "son notumu oku", "notlarımda X'i ara"; Notlar'ın kendi sesli özellikleri değişmemiş.
+- Faz 5: "kira sözleşmesi dosyasını aç", "son dosyayı aç", "bu dosyayı sesli oku", "okumayı durdur", "bu dosyayı özetle".
+- Faz 6: Gemini anahtarıyla "Türkiye'nin en yüksek dağı hangisi?", "beş dakikalık bir şey kur", Harita açıkken
+  "Kızılay'a nasıl giderim" → "peki oraya ne kadar sürer".
+- Faz 7: güç tuşuna basılı tutma (kilitliyken de), araç Bluetooth'unun sesli komut düğmesi, kulaklık düğmesine uzun
+  basma (ilk seferde "Asistan › Her zaman"). openWakeWord/Vosk karşılaştırması (K5) istenirse ölçümle.
 
 ## 0. Verilmiş kararlar (2026-10-31)
 
@@ -223,15 +260,16 @@ mikrofon ─► │ Uyanma: Vosk dilbilgisi ("hey asistan", "hey harita", "hey n
 ### Faz 5 — Dosya Okuyucu köprüsü (yalnız kişisel derleme)
 - [x] Köprü Kotlin'i `ci/` yaması olarak (`prepare_android.sh`), kişisel bayrakla; `tool/check_kotlin.sh` koşulur.
   (`ci/kisisel/AsistanKopru.kt`, `DOSYA_KISISEL=1`; CI'da elle `kisisel: true`, o koşu Release yayınlamaz. Arama/kapsam
-  `Ajan.kt`'den `ci/DosyaArama.kt`'ye taşındı. `check_kotlin.sh` gerçek jar'la temiz. **Dosya Okuyucu'ya bu oturumda
-  push izni verilmedi** (yalnız okuma): commit `yamalar/dosya-okuyucu-faz5.patch`'te; o depoda `git am` ile
-  uygulanıp `main`'e push edilir — açık iş, aşağıda.)
+  `Ajan.kt`'den `ci/DosyaArama.kt`'ye taşındı. `check_kotlin.sh` gerçek jar'la temiz. İlk oturumda push izni yoktu;
+  Faz 7 oturumunda yama `git am` ile uygulanıp `kaimau1/dosya-okuyucu` main'ine alındı.)
 - [x] Komutlar, asistan tarafı: `beceri/DosyalarSozleri` (JVM testli) + `DosyalarBecerisi`; protokole `KOMUT`(107) /
   `SONUÇ`(9) eklendi (`Kopru.komut`, cevaptaki PendingIntent'i asistan açar). "X dosyasını aç" ve "son dosyayı aç"
   uçtan uca yazıldı.
-- [ ] "Sesli oku / durdur" (uygulamanın kendi `TtsService`'i) ve "özetle" (uygulamanın Gemini'si): Dosya Okuyucu'da
-  ikisi de görüntüleyici ekranının Dart durumunda; asistandan başlatmak için Dart'ta kanca gerekir → **K7 (açık)**.
-  O zamana kadar köprü "henüz bağlı değil" der.
+- [x] "Sesli oku / durdur" (uygulamanın kendi `TtsService`'i) ve "özetle" (uygulamanın Gemini'si): Dosya Okuyucu'da
+  ikisi de görüntüleyici ekranının Dart durumunda; asistandan başlatmak için Dart'ta kanca gerekir → **K7: kanca
+  eklendi.** (Köprü dosyayı bulup `oku:/yol`, `ozet:/yol`, `durdur:` bağlantısı verir; Dart'ta
+  `lib/services/asistan_komutlari.dart` açık görüntüleyicinin kendi `_toggleSpeech`'ini başlatır/duraklatır, özet
+  mevcut `showAiSummary`. `TtsService` değişmedi. Özet asistanda okunmaz, Dosya Okuyucu'da açılır.)
 - [ ] Bitti sayılır: Faz 4 ile aynı denetim (genel APK'da köprü yok). (Denetim `prepare_android.sh`'te yazıldı;
   yama uygulanıp CI'da koşunca ve telefonda kişisel APK'da "dosyasını aç" denenince.)
 
@@ -257,11 +295,23 @@ mikrofon ─► │ Uyanma: Vosk dilbilgisi ("hey asistan", "hey harita", "hey n
   bağlamla anlaşılıyor.
 
 ### Faz 7 — İsteğe bağlı
-- [ ] openWakeWord ile Türkçe söz eğitimi (Piper Türkçe sesleriyle yapay örnek); Vosk ile CPU/pil karşılaştırması
-  (K5).
-- [ ] Araç ve kulaklık düğmesi: Dicio `VOICE_COMMAND` eylemini zaten karşılıyor; araçta denenir.
-- [ ] Varsayılan dijital asistan (güç tuşuna basılı tutma) (K6).
-- [ ] Dicio güncellemelerini birleştirme rutini.
+- [ ] 🟨 openWakeWord ile Türkçe söz eğitimi (Piper Türkçe sesleriyle yapay örnek); Vosk ile CPU/pil karşılaştırması
+  (K5). Karar: Vosk kalır; karşılaştırma telefonda ölçülmeden openWakeWord eklenmez (bulutta CPU/pil ölçülemez).
+  Yöntem: aynı `tool/uyanma_olcum.py` olumsuz/olumlu seti + telefonda `top` ve bir saatlik pil (Faz 1 ölçümüyle).
+- [x] Araç ve kulaklık düğmesi: Dicio `VOICE_COMMAND`'ı (araç Bluetooth'unun sesli komut düğmesi) zaten karşılıyor;
+  kulaklık düğmesine uzun basma için `WEB_SEARCH` / `VOICE_SEARCH_HANDS_FREE` eklendi (`giris/VarsayilanAsistan.kt`,
+  `// ASISTAN:` MainActivity). Hepsi kilit ekranında da açılır. 🟨 araçta ve kulaklıkla denenecek.
+- [x] Varsayılan dijital asistan (güç tuşuna basılı tutma) (K6). Rol Dicio'nun `ACTION_ASSIST` etkinliğiyle;
+  `VoiceInteractionService` bilerek yok (sistemin varsayılan tanıyıcısını da değiştirirdi → Notlar'ın kendi dikte'si
+  asistandan geçerdi, D5; HAFIZA). Ayarlar › "Varsayılan asistan" durumu gösterir, dokununca sistem ekranı açılır.
+  Kulak, varsayılan tanıyıcı asistanın kendisi olursa Google'ınkini açıkça seçer (`TaniyiciSecimi`, döngü olmasın).
+  🟨 telefonda: HyperOS güç tuşu ayarı.
+- [x] Dicio güncellemelerini birleştirme rutini: `bash tool/dicio_guncelle.sh` (yeni commit'leri ve kancalı dosyaları
+  listeler; `--birlestir` ayrı dalda birleştirir). 2026-10-31'de upstream'de yeni commit yok (`3d1c154`).
+- [x] Telefon geri bildirimi (kullanıcı 2026-11-01): "notlar uygulamasını aç" Notlar becerisine, "not al" yol
+  tarifine ("not'e gidiliyor"), "kanallarımı aç" kaldığı yerden sürdürmeye düşüyordu. Düzeltme: yönlendirmenin 0.
+  adımı adıyla uygulama açma (`Yonlendirme.acilacak` → `AcmaBecerisi`: Harita, Kanallarım, Notlar, Dosya Okuyucu;
+  "Hey Notlar, aç" da); bizim beceriler Dicio'nunkilerin önünde (eşit puanda öndeki kazanır).
 
 ## 7. Açık kararlar
 
@@ -278,13 +328,13 @@ mikrofon ─► │ Uyanma: Vosk dilbilgisi ("hey asistan", "hey harita", "hey n
   onlarla beraber çalışsın, boşta durmuş olur"): K3'ün yanına dördüncü kip.
 - [ ] **K5** (Faz 7) Uyanma motoru: Vosk dilbilgisi mi openWakeWord mü (ölçümle). (Kullanıcı 2026-10-31: ölçüm
   bulutta yapılamadığı için şimdilik Vosk kalır; telefon ölçümü bekleyen madde olarak durur.)
-- [ ] **K7** (Faz 5, açık — kullanıcıya sorulacak) Dosya Okuyucu'da "sesli oku / durdur / özetle" asistandan
+- [x] **K7** (Faz 5) **Karar (2026-10-31): (a) kanca eklendi** (otomatik zincir, önerilen seçenek). Dosya Okuyucu'da "sesli oku / durdur / özetle" asistandan
   başlatılsın mı? Gereken: Dosya Okuyucu'nun **Dart** koduna (görüntüleyici) küçük bir kanca — ör. `oku:`/`ozet:`
   bağlantısı ve açık görüntüleyicinin sesli okumasını başlatıp durduran bir dinleyici; kişisel derlemenin köprüsü
   bunu tetikler. Kanca genel APK'da da bulunur ama etkisizdir (tetikleyen köprü yok). D5 "kendi ses özelliklerine
   dokunulmaz" der: `TtsService`'in kendisi değişmez, yalnız başlatılır. Seçenekler: (a) kanca eklensin (öneri),
   (b) yalnız "aç" kalsın.
-- [ ] **Açık iş (Faz 5)**: Dosya Okuyucu'ya push izni. `yamalar/dosya-okuyucu-faz5.patch` o depoda
+- [x] **Açık iş (Faz 5)** (Faz 7 oturumunda yapıldı: yama uygulandı, `check_kotlin.sh` + `flutter analyze/test` temiz, main'e push): Dosya Okuyucu'ya push izni. `yamalar/dosya-okuyucu-faz5.patch` o depoda
   `git am` ile uygulanır, `bash tool/check_kotlin.sh` + CI yeşil, `main`'e push. Sonra telefondaki Dosya Okuyucu
   kişisel APK'yla (CI elle, `kisisel: true`) güncellenir; asistan izni tanımlayan uygulamadan önce kurulduysa
   asistan yeniden kurulur (PROTOKOL tuzağı).

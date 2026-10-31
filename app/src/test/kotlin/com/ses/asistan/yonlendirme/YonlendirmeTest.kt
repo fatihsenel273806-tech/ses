@@ -30,6 +30,23 @@ class YonlendirmeTest {
         assertNull(Yonlendirme.once("haritayı büyüt", null, listOf(harita)))
     }
 
+    @Test fun uygulamayiAdiylaAc() {
+        // telefonda (2026-11-01): Notlar becerisine ve "kaldığın yerden"e düşüyordu
+        assertEquals(Karar.Ac("notlar"), Yonlendirme.once("notlar uygulamasını aç", null, listOf(harita)))
+        assertEquals(Karar.Ac("notlar"), Yonlendirme.once("Notlarımı aç", null, emptyList()))
+        assertEquals(Karar.Ac("kanallar"), Yonlendirme.once("kanallarımı aç", null, emptyList()))
+        assertEquals(Karar.Ac("kanallar"), Yonlendirme.once("Kanallarım uygulamasını açar mısın", null, emptyList()))
+        assertEquals(Karar.Ac("harita"), Yonlendirme.once("haritayı aç", "asistan", listOf(harita)))
+        assertEquals(Karar.Ac("dosyalar"), Yonlendirme.once("dosya okuyucuyu aç", null, emptyList()))
+        // uyanma adından sonra yalnız "aç" yeter
+        assertEquals(Karar.Ac("harita"), Yonlendirme.once("aç", "harita", listOf(harita)))
+        assertEquals(Karar.Ac("notlar"), Yonlendirme.once("Hey Notlar, uygulamayı aç", null, emptyList()))
+        // başka komutlar açma değil
+        assertEquals(Karar.Notlar("son notum ne"), Yonlendirme.once("son notum ne", "notlar", emptyList()))
+        assertNull(Yonlendirme.once("youtube'u aç", null, listOf(harita)))
+        assertNull(Yonlendirme.once("aç", null, listOf(harita)))
+    }
+
     @Test fun kurulMamisUygulamaninAdi() {
         // Notlar'ın köprü servisi yoksa (aday değil) "hey notlar" asistanın Notlar becerisine (yayın alıcısı)
         assertEquals(Karar.Notlar("son notum ne"), Yonlendirme.once("son notum ne", "notlar", listOf(harita)))
