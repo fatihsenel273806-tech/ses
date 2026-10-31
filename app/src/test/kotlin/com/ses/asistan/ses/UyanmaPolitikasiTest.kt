@@ -29,4 +29,17 @@ class UyanmaPolitikasiTest {
         assertFalse(dinlemeli(Durum(kip = Kip.YALNIZ_ELLE, navigasyonda = true, bluetoothAdlari = listOf("Araç"))))
         assertTrue(dinlemeli(Durum(kip = Kip.YALNIZ_ELLE, elleAcik = true)))
     }
+
+    @Test fun asistanEkrandayken() {
+        // asistanı açmak elle açmak sayılır: araçta değilken de "Hey Asistan" duyulsun
+        assertTrue(dinlemeli(Durum(asistanEkranda = true)))
+        assertTrue(dinlemeli(Durum(kip = Kip.YALNIZ_ELLE, asistanEkranda = true)))
+        assertFalse(dinlemeli(Durum(asistanEkranda = true, gorusmede = true)))
+    }
+
+    @Test fun nedenSoylenir() {
+        assertTrue(UyanmaPolitikasi.neden(Durum()).startsWith("Dinlenmiyor: araçta değil"))
+        assertTrue(UyanmaPolitikasi.neden(Durum(bluetoothAdlari = listOf("Buds"), aracAdi = "r-link")).contains("eşleşmiyor"))
+        assertTrue(UyanmaPolitikasi.neden(Durum(bluetoothAdlari = listOf("R-Link"))).startsWith("Dinleniyor"))
+    }
 }

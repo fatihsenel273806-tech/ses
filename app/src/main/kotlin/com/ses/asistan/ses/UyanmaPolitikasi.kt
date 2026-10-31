@@ -19,6 +19,8 @@ object UyanmaPolitikasi {
         /** Ayardaki araç adı (boş: her Bluetooth ses aygıtı araç sayılır). */
         val aracAdi: String = "",
         val navigasyonda: Boolean = false,
+        /** Asistanın kendi ekranı önde: elle açılmış sayılır (açıp "Hey Asistan" demek de çalışsın). */
+        val asistanEkranda: Boolean = false,
         /** Telefon görüşmesi sürüyor: mikrofon görüşmenindir. */
         val gorusmede: Boolean = false,
     )
@@ -33,8 +35,21 @@ object UyanmaPolitikasi {
         if (d.gorusmede) return false
         return when (d.kip) {
             Kip.HER_ZAMAN -> true
-            Kip.YALNIZ_ELLE -> d.elleAcik
-            Kip.ARACTA_VE_ELLE -> d.elleAcik || d.navigasyonda || aracta(d.bluetoothAdlari, d.aracAdi)
+            Kip.YALNIZ_ELLE -> d.elleAcik || d.asistanEkranda
+            Kip.ARACTA_VE_ELLE -> d.elleAcik || d.asistanEkranda || d.navigasyonda || aracta(d.bluetoothAdlari, d.aracAdi)
         }
+    }
+
+    /** Ayarlarda gösterilen gerekçe: şu an neden dinleniyor ya da dinlenmiyor. */
+    fun neden(d: Durum): String = when {
+        d.gorusmede -> "Dinlenmiyor: telefon görüşmesi sürüyor"
+        d.kip == Kip.HER_ZAMAN -> "Dinleniyor (her zaman)"
+        d.elleAcik -> "Dinleniyor (elle açıldı)"
+        d.asistanEkranda -> "Dinleniyor (asistan ekranda)"
+        d.kip == Kip.YALNIZ_ELLE -> "Dinlenmiyor: yalnız elle (bildirimdeki “Dinle / bırak” ya da aşağıdaki anahtar)"
+        d.navigasyonda -> "Dinleniyor (navigasyon)"
+        aracta(d.bluetoothAdlari, d.aracAdi) -> "Dinleniyor (araçta: ${d.bluetoothAdlari.joinToString()})"
+        d.bluetoothAdlari.isNotEmpty() -> "Dinlenmiyor: bağlı Bluetooth (${d.bluetoothAdlari.joinToString()}) araç adıyla eşleşmiyor"
+        else -> "Dinlenmiyor: araçta değil (Bluetooth yok). Elle açın ya da “Her zaman” seçin"
     }
 }

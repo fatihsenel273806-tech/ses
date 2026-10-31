@@ -30,7 +30,6 @@ import org.stypox.dicio.io.wake.WakeService
 import org.stypox.dicio.io.wake.WakeState.Loaded
 import org.stypox.dicio.io.wake.WakeState.Loading
 import org.stypox.dicio.io.wake.WakeState.NotLoaded
-import org.stypox.dicio.ui.home.wakeWordPermissions
 import org.stypox.dicio.ui.nav.Navigation
 import org.stypox.dicio.util.BaseActivity
 import java.time.Instant
@@ -125,7 +124,8 @@ class MainActivity : BaseActivity() {
             wakeDevice.state
                 .map { it == NotLoaded || it == Loading || it == Loaded }
                 .combine(
-                    PermissionFlow.getInstance().getMultiplePermissionState(*wakeWordPermissions)
+                    // ASISTAN: yalnız mikrofon şart; bildirim izni yoksa da uyanma servisi çalışsın (bildirim görünmez)
+                    PermissionFlow.getInstance().getMultiplePermissionState(Manifest.permission.RECORD_AUDIO)
                 ) { wakeState, permGranted ->
                     wakeState && permGranted.allGranted
                 }

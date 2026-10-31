@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Hearing
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.RecordVoiceOver
@@ -19,6 +20,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
+import com.ses.asistan.giris.UyanmaKapisi
+import com.ses.asistan.giris.VoskWakeDevice
+import org.stypox.dicio.io.wake.WakeService
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -204,11 +210,27 @@ private fun AndroidSesSecici(ses: Ses, kapat: () -> Unit) {
     )
 }
 
+/**
+ * Uyanmanın neden çalışıp çalışmadığı (telefonda "hiç uyanmıyor" denince ilk bakılacak yer). Ayar ekranı asistanın
+ * kendi ekranı olduğu için politika ekran dışındaki hâliyle söylenir.
+ */
+private fun uyanmaDurumu(ctx: android.content.Context): String {
+    if (!VoskWakeDevice.hazir(ctx)) return "Uyanma modeli inmedi: ana ekrandaki indirme kartına dokunun (36 MB)"
+    if (androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) !=
+        android.content.pm.PackageManager.PERMISSION_GRANTED) return "Mikrofon izni yok"
+    if (!WakeService.isRunning()) return "Uyanma servisi çalışmıyor: “Uyanma yöntemi”nde Hey Asistan (Vosk) seçili olmalı"
+    return "Ekran dışında: " + UyanmaPolitikasi.neden(UyanmaKapisi.durum(ctx).copy(asistanEkranda = false))
+}
+
 @Composable
 private fun UyanmaBolumu() {
     val ctx = LocalContext.current
     val a = remember { SesAyarlari.al(ctx) }
     ayarSayaci(a)
+    // her saniye yenilenir: Bluetooth bağlanınca, model inince, servis başlayınca görülsün
+    var durum by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) { while (true) { durum = uyanmaDurumu(ctx); delay(1000) } }
+    SettingsItem(title = "Uyanma şu an", icon = Icons.Default.Info, description = durum)
     ListSetting(
         title = "Ne zaman dinlensin",
         icon = Icons.Default.Hearing,

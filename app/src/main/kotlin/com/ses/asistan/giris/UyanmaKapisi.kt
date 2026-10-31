@@ -72,6 +72,7 @@ object UyanmaKapisi {
             bluetoothAdlari = bluetooth,
             aracAdi = ayarlar.aracAdi,
             navigasyonda = SesDurumu.navigasyonda,
+            asistanEkranda = org.stypox.dicio.MainActivity.isInForeground > 0,
             gorusmede = gorusmede,
         )
     }

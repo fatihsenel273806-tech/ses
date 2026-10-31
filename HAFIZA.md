@@ -62,6 +62,15 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
   dakika kaldı, öndeki ışıkta bekleyeceksiniz." Vosk'ta kelimesi kelimesine tanındı. Bulut CPU'sunda 4 sn ses:
   adım 8 → 6,9 sn, 4 → 4,2 sn, 2 → 2,6 sn (telefonda ayrıca ölçülür; varsayılan adım 4, akış parça parça çalar).
 
+- **2026-10-31 — Telefonda "hiç uyanmıyor" (Faz 1 APK'sı)**. Kullanıcı: "hey asistan hey notlar … hiçbir şekilde
+  uyanmıyor; ne uygulamaların içinde ne kendi içinde ne ana ekranda". Mikrofon düğmesiyle tanıma çalışıyordu (hava
+  durumu). Kodda bulunan nedenler: (1) K3 "araçta + elle" varsayılanında Bluetooth ses aygıtı / navigasyon / elle açma
+  yoksa kayıt bilerek durur ve bunu gösteren hiçbir yer yoktu; asistanın kendi ekranı açıkken bile dinlemiyordu.
+  (2) Dicio uyanma servisini mikrofon + bildirim (+ Android 14'te tam ekran) izinleri birlikte verilmeden hiç
+  başlatmıyordu. Düzeltme: asistan ekrandayken elle açılmış sayılır (`asistanEkranda`); servis yalnız mikrofon iznine
+  bağlı (`// ASISTAN:` MainActivity); ayarlarda "Uyanma şu an" satırı nedeni söyler (model inmedi / mikrofon izni yok /
+  servis çalışmıyor / araçta değil / Bluetooth adı eşleşmiyor). Telefonda önce bu satıra bakılır.
+
 ## Reddedilen / değişen yollar
 
 - **Ortak kütüphane (her uygulamaya giren Kotlin AAR + Flutter eklentisi)** — 2026-10-31 sabah planlandı, aynı gün
