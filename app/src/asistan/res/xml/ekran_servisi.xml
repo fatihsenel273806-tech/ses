@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ekran görüntüsü + ekran ajanı. Olay dinlenmez (tür dar); pencere içeriği yalnız istenince ve yalnız bağlı dört
+     uygulamada okunur (ajan/EkranOkuyucu.izinli). Dokunma hareketi: düğme erişilebilirlik eylemine cevap vermezse. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeAnnouncement"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagDefault|flagReportViewIds"
+    android:canPerformGestures="true"
+    android:canRetrieveWindowContent="true"
+    android:canTakeScreenshot="true"
+    android:description="@string/ekran_servisi_aciklama"
+    android:notificationTimeout="1000" />

@@ -134,7 +134,7 @@ kalır (kod 0). Notlar öne gelmez, Flutter motoru açılmaz: alıcı yerel Fire
 
 | Eylem | Ekler | Cevap kodu | Cevap ekleri |
 |---|---|---|---|
-| `dev.kaimau.notlar.HARITA_NOT` | `text`, `title`, `folder` (yoksa "Haritalar"), `place`, `pinned`, `transcript` (Kanallarım) | 1 yazıldı (yerelde; çevrimdışıysa Firestore kuyruğunda), 2 sırada (oturum yok; uygulama açılınca yazılır) | — |
+| `dev.kaimau.notlar.HARITA_NOT` | `text`, `title`, `folder` (yoksa "Haritalar"), `place`, `pinned`, `transcript` (Kanallarım), `image` (asistan: ekran görüntüsünün `content://com.ses.asistan.ekran/…` adresi, JPEG), `video` (asistan: görselin ekleneceği YouTube videosunun kimliği) | 1 yazıldı (yerelde; çevrimdışıysa Firestore kuyruğunda), 2 sırada (oturum yok; uygulama açılınca yazılır) | — |
 | `dev.kaimau.notlar.ASISTAN_SORGU` | `istek` (`son` \| `ara`), `terimler` (ArrayList<String>, `ara`'da hepsi notta geçmeli), `adet` (1–10) | 1 tamam, 3 giriş yok, 0 olmadı | `basliklar`, `metinler` (ArrayList<String>), `zamanlar` (long[], ms) |
 
 - Silinen, arşivlenen, **kilitli** notlar ve **gizli klasördeki** notlar sorguda asla verilmez.
@@ -142,6 +142,10 @@ kalır (kod 0). Notlar öne gelmez, Flutter motoru açılmaz: alıcı yerel Fire
   klasörüne, Harita'nınkiler "Haritalar"a, Kanallarım'ınkiler "YouTube"a (sabitli).
 - Metinde YouTube bağlantısı varsa not videonun kendi notuna (`yt_<videoId>`) satır olarak eklenir; `transcript`
   (Kanallarım'ın tam altyazısı) o notun transkriptine gider (Notlar HAFIZA › Harita köprüsü).
+- `image` (2026-11-01): asistan göndermeden önce adrese yalnız Notlar için okuma izni verir (`grantUriPermission`).
+  Alıcı dosyayı kendi klasörüne kopyalar, notun **görsel eki** yapar (yüklenmemiş kayıt; Notlar'ın yükleme kuyruğu
+  uygulama açılınca kullanıcının seçtiği buluta yükler). `text` boş olabilir (yalnız görsel). `video` verildiyse ve
+  `yt_<video>` notu varsa görsel (ve metin) o nota eklenir; yoksa normal not açılır.
 
 ## Dosya Okuyucu komutları (Faz 5)
 

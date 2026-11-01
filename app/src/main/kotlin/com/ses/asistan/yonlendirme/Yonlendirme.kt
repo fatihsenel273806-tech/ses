@@ -5,7 +5,8 @@ import java.util.Locale
 /**
  * Söylenenin nereye gideceği (PLAN §1). Android'e bağlı değil: JVM testiyle sınanır. Sıra:
  *  0. [once]: "notlar uygulamasını aç", "kanallarımı aç", "Hey Harita, aç" → o uygulama açılır ([Karar.Ac]).
- *  1. [once]: uyanma adı ("Hey Harita …", "Hey Kanallar …", "Hey Notlar …"); cümlenin başında söylenen ad da sayılır. (Uygulamanın
+ *  1. [once]: uyanma adı ("Hey Harita …", "Hey Kanallar …", "Hey Notlar …"); cümlenin başında söylenen ad da sayılır.
+ *     Ad ipucudur: not komutu her adla Notlar'a, adın becerisi anlamazsa 2. adıma geçilir (Yonlendirici). (Uygulamanın
  *     kendi dinleme isteği — `DİNLE`, `DİKTE` — buraya hiç gelmez: duyulan doğrudan o uygulamaya gider.)
  *  2. Dicio becerileri (bizimkiler dahil) — bu sınıfın dışında, SkillEvaluator'da.
  *  3. [sonra]: hiçbir beceri anlamadıysa metin devri: devri o an kabul eden bağlı uygulama (ör. navigasyondaki Harita).
@@ -49,9 +50,9 @@ object Yonlendirme {
     sealed interface Karar {
         /** Metin uygulamaya devredilir; [uyanma]: uyanma sözünden hemen sonra söylendi (ilk hece kaçmış olabilir). */
         data class Uygulamaya(val paket: String, val metin: String, val uyanma: Boolean) : Karar
-        /** "Hey Kanallar …": yalnız Kanallarım becerisi dinlenir. */
+        /** "Hey Kanallar …": önce Kanallarım becerisi (anlamazsa diğer beceriler; not komutu Notlar'ın). */
         data class Kanallar(val metin: String) : Karar
-        /** "Hey Notlar …": yalnız Notlar becerisi dinlenir (Notlar'ın köprü servisi yoksa). */
+        /** "Hey Notlar …": önce Notlar becerisi (Notlar'ın köprü servisi yoksa; anlamazsa diğer beceriler). */
         data class Notlar(val metin: String) : Karar
         /** Uygulamanın kendisi açılır; [ad]: [ACILAN]'daki anahtar (harita, kanallar, notlar, dosyalar). */
         data class Ac(val ad: String) : Karar
@@ -71,6 +72,10 @@ object Yonlendirme {
     private const val ACMA = "(?:aç|başlat|çalıştır|göster|getir)(?:ır mısın|ar mısın|abilir misin|ır mısınız)?(?: lütfen)?"
     private val AC_ADLI = ACILAN.map { (ad, r) -> ad to Regex("^(?:hey |ey )?(?:$r)(?: $UYG)? $ACMA$") }
     private val AC_YALIN = Regex("^(?:$UYG )?$ACMA$")
+    /** Uygulamalar arası geçiş: "notlara geç", "haritaya dön", "kanallarıma geç" (2026-11-01). */
+    private val GECIS = mapOf(
+        "harita" to "haritaya", KANALLAR to "kanallar(?:ım)?a", NOTLAR to "notlar(?:ım)?a", "dosyalar" to "dosya okuyucu(?:'?ya|ya)",
+    ).map { (ad, r) -> ad to Regex("^(?:hey |ey )?(?:$r)(?: (?:uygulamasına|geri))? (?:geç|dön)(?:er misin|ebilir misin)?(?: lütfen)?$") }
     private val TEMIZ = Regex("[.!?,;:]")
     private val BOSLUK = Regex("\\s+")
 
@@ -78,6 +83,7 @@ object Yonlendirme {
     fun acilacak(metin: String, uyanmaAdi: String?): String? {
         val t = metin.lowercase(TR).replace(TEMIZ, " ").replace(BOSLUK, " ").trim()
         AC_ADLI.firstOrNull { it.second.matches(t) }?.let { return it.first }
+        GECIS.firstOrNull { it.second.matches(t) }?.let { return it.first }
         return uyanmaAdi?.takeIf { it in ACILAN && AC_YALIN.matches(t) }
     }
 

@@ -15,6 +15,10 @@ import java.util.Locale
  *  - Metin devri kabul eden uygulama (Harita): `uygulamaya_<ad>(metin)`. Uygulama cümleyi **kendi** komut anlayışıyla
  *    (kendi Gemini'siyle) yorumlar; asistanın Gemini'si yalnız hedefi seçer ve göndermeleri ("oraya") açar.
  *  - Yapılandırılmış komutu olan uygulama (Dosya Okuyucu): `<ad>_<komut>(sorgu)` → köprüden `KOMUT`.
+ *  - `not_al(metin, ekran_goruntusu, konum, video_notu)`: Notlar'a not (2026-11-01); kuralların anlamadığı serbest
+ *    söyleyişte ("şunu bir kenara yaz, ekranı da koy") ekleri Gemini seçer, akış Notlar becerisinin aynısı.
+ *  - `ekranda_yap(gorev, uygulama)`: başka araçla yapılamayan her iş, bağlı dört uygulamanın ekranında adım adım
+ *    (ekran ajanı, [com.ses.asistan.ajan.Ajan]).
  */
 object Gemini {
     /** Köprüsü olan uygulama (`ses_yetenekler.xml`) ve görünen adı. */
@@ -30,6 +34,8 @@ object Gemini {
         data object Asistan : Arac
         data class Devret(val paket: String, val ad: String) : Arac
         data class Komut(val paket: String, val ad: String, val komut: String) : Arac
+        data object Not : Arac
+        data object Ekran : Arac
     }
 
     class Araclar(val bildirim: JSONArray, val adlar: Map<String, Arac>)
@@ -40,15 +46,23 @@ object Gemini {
         data class Asistan(val cumle: String) : Cevap
         data class Devret(val paket: String, val ad: String, val metin: String) : Cevap
         data class Komut(val paket: String, val ad: String, val komut: String, val sorgu: String) : Cevap
+        /** Not al: [metin] boşsa dikte edilir. */
+        data class Not(val metin: String, val ekran: Boolean, val konum: Boolean, val video: Boolean) : Cevap
+        /** Ekran ajanı: [uygulama] önce açılır ([com.ses.asistan.ajan.Ajan.UYGULAMALAR]); null: öndeki uygulama. */
+        data class Ekran(val gorev: String, val uygulama: String?) : Cevap
         data object Bos : Cevap
     }
 
     const val ASISTAN = "asistan_komutu"
+    const val NOT = "not_al"
+    const val EKRAN = "ekranda_yap"
 
     const val SISTEM = "Sen Türkçe konuşan kişisel bir sesli asistansın; telefondaki uygulamalara (harita, video, notlar, " +
         "dosyalar) bağlısın. Cevapların sesli okunur: kısa ve doğal konuş (en çok iki cümle), madde işareti, emoji, " +
         "markdown kullanma. İstek asistanın ya da bir uygulamanın yapabileceği bir işse ilgili fonksiyonu çağır, yalnız " +
-        "anlatma. Önceki konuşmaları hatırla: 'oraya', 'onu', 'ikincisi', 'peki orada otopark var mı' gibi sözleri geçmişe " +
+        "anlatma. Bağlı uygulamalarda (Harita, Kanallarım, Notlar, Dosya Okuyucu) özel fonksiyonu olmayan her işi " +
+        "ekranda_yap ile yap (ör. ayar değiştirmek, bir notu açıp düzenlemek, listeden seçmek, favoriye eklemek). " +
+        "Önceki konuşmaları hatırla: 'oraya', 'onu', 'ikincisi', 'peki orada otopark var mı' gibi sözleri geçmişe " +
         "göre çöz. İstek belirsizse uydurma: tek kısa soruyla netleştir (soru işaretiyle bitsin). Genel sorulara (bilgi, " +
         "sohbet) kısa ve doğru cevap ver; bilmediğin güncel bilgiyi (haber, fiyat, maç sonucu) uydurma. Durumda navigasyon " +
         "varsa kullanıcı araç kullanıyor: cevabı daha da kısa tut, dikkat dağıtma."
@@ -69,6 +83,7 @@ object Gemini {
         )
 
     private fun yazi(aciklama: String) = JSONObject().put("type", "string").put("description", aciklama)
+    private fun evet(aciklama: String) = JSONObject().put("type", "boolean").put("description", aciklama)
 
     /**
      * Araç bildirimi. [ornekler]: asistanın açık becerilerinin örnek cümleleri ("Saat kaç", "Not al, yarın süt alınacak").
@@ -90,6 +105,28 @@ object Gemini {
                     ornekler.filter { o -> o.isNotBlank() }.distinct().joinToString("; ") + ".",
                 JSONObject().put("cumle", yazi("Becerinin anlayacağı sade Türkçe komut cümlesi, örneklerdeki gibi (ör. 'saat kaç', '5 dakikalık zamanlayıcı kur', 'geri sar')")),
                 listOf("cumle"),
+            )
+        }
+        ekle(NOT, Arac.Not) {
+            fn(
+                it, "Notlar uygulamasına not al (hangi uygulama açık olursa olsun). Kullanıcı ekran görüntüsü, konum ya da " +
+                    "video notu istediyse ilgili seçeneği aç; istemediyse kapalı bırak.",
+                JSONObject()
+                    .put("metin", yazi("Notun metni, kullanıcının söylediği gibi (komut sözleri ve ek istekleri olmadan); söylemediyse boş: sonra dikte edilir"))
+                    .put("ekran_goruntusu", evet("Ekran görüntüsü (SS) nota eklensin"))
+                    .put("konum", evet("Bulunulan konum nota eklensin"))
+                    .put("video_notu", evet("Not Kanallarım'da izlenen videonun notuna, o anın dakikasıyla")),
+            )
+        }
+        ekle(EKRAN, Arac.Ekran) {
+            fn(
+                it, "Harita, Kanallarım, Notlar ya da Dosya Okuyucu'da, uygulamanın ekranındaki düğmeleri kullanarak bir işi " +
+                    "baştan sona yap (dokunma, yazma, kaydırma). Başka fonksiyonla yapılamayan her iş için.",
+                JSONObject()
+                    .put("gorev", yazi("Yapılacak iş, açık ve eksiksiz Türkçe (göndermeler geçmişe göre açılmış)"))
+                    .put("uygulama", JSONObject().put("type", "string").put("description", "Önce açılacak uygulama; zaten öndeyse boş")
+                        .put("enum", JSONArray(listOf("harita", "kanallar", "notlar", "dosyalar")))),
+                listOf("gorev"),
             )
         }
         for (u in uygulamalar) {
@@ -161,6 +198,11 @@ object Gemini {
                     Arac.Asistan -> a.optString("cumle").trim().takeIf { it.isNotEmpty() }?.let { Cevap.Asistan(it) } ?: Cevap.Bos
                     is Arac.Devret -> Cevap.Devret(arac.paket, arac.ad, a.optString("metin").trim().ifEmpty { soz.trim() })
                     is Arac.Komut -> Cevap.Komut(arac.paket, arac.ad, arac.komut, a.optString("sorgu").trim())
+                    Arac.Ekran -> a.optString("gorev").trim().takeIf { it.isNotEmpty() }
+                        ?.let { Cevap.Ekran(it, a.optString("uygulama").trim().ifEmpty { null }) } ?: Cevap.Bos
+                    Arac.Not -> Cevap.Not(
+                        a.optString("metin").trim(), a.optBoolean("ekran_goruntusu"), a.optBoolean("konum"), a.optBoolean("video_notu"),
+                    )
                     null -> Cevap.Bos
                 }
             }

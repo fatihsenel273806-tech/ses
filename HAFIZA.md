@@ -171,6 +171,31 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
   beceriler `SkillHandler` listesinin başında. Ders: Dicio'nun genel cümleleri (`.where.`, `.what.` yakalayıcıları)
   kısa Türkçe komutları yutar; yeni beceri eklerken Dicio'nun cümle dosyalarıyla çakışma denetlenir.
 
+- **2026-11-01 — Telefon geri bildirimi 2 (Faz 8)**. Ekran görüntüsünde "Not alır mısın deneme diye" → "Kanallarım
+  için anlamadım": kök neden uyanma adının ("Hey Kanallar") cümleyi o beceriye **zorlaması**. Karar: uyanma adı yalnız
+  ipucu; not komutu her adla Notlar'a, adın becerisi anlamazsa diğer beceriler + Gemini. "Yeni bir not aç içerisinde
+  deneme yaz" kurallarda yoktu → `NotlarSozleri.notAl` (önce ekler cümleden çıkarılır, sonra kalıplar). "Kanallarım'da
+  yalnız Hey Kanallar uyanıyor": Faz 1 ölçümü zaten söylüyordu (arkada konuşmayla asistan 1/4, notlar 0/4, kanallar
+  3/4); karar kuralı gevşetmek ölçümde kazanç vermedi ("hey"siz ad kabulü olumsuz örneklerde yanlış tetikledi), bu
+  yüzden uyanma kaydına `AcousticEchoCanceler` + `NoiseSuppressor` (telefonda ölçülecek).
+- **2026-11-01 — Ekran görüntüsü ve ekran ajanı tek erişilebilirlik servisinde** (`ek/EkranServisi`). Kullanıcı
+  kararları: MediaProjection değil erişilebilirlik (sorusuz); ajan **yalnız bağlı dört uygulamada** (pencere başka
+  paketteyse okunmaz, dokunulmaz; `EkranOkuyucu.izinli`); geri alınamayan işte (sil, gönder, öde…) sesli onay —
+  Gemini `onay_iste`'yi unutursa çalıştırıcı `EkranMetni.riskli` ile kendisi sorar. "Hey Asistan" ile asistanın ekranı
+  öndeyse önce geri düğmesiyle arkaya alınır (görüntü/iş alttaki uygulamada). Ajan çok turlu function calling:
+  modelin içeriği (`thoughtSignature`) aynen geri gönderilir; yalnız son ekran tam gider. Arka plandan uygulama açmak:
+  bağlı erişilebilirlik servisi olan uygulama arka plan etkinlik kısıtından muaf.
+- **2026-11-01 — Notlar'a görsel eki** (PROTOKOL "Notlar yayınları" › `image`, `video`). Asistan JPEG'i FileProvider
+  (`com.ses.asistan.ekran`, `cache/ekran/`) adresiyle verir, yalnız Notlar'a `grantUriPermission`. Notlar alıcısı
+  dosyayı Dart'ın türettiği yerel yola (`filesDir/attachments/<not>/<ek>_<ad>`) koyar, eki **yüklenmemiş** yazar;
+  buluta (Drive ya da Storage, kullanıcının seçimi) Notlar'ın UploadQueue'su uygulama açılınca yükler — yerel
+  yüklemeyle kullanıcının eşitleme seçimi atlanmasın diye. Konum: asistan çoğu zaman arka planda → "her zaman izin
+  ver" gerekir (Ayarlar › Asistan › Not ekleri).
+- **Bulut derleme tuzağı (2026-11-01, init betiği)**: Dicio'nun dahil edilen derlemeleri (`dicio-sentences-compiler`,
+  `sentences-compiler-plugin`) kendi proje depolarını kullanıyor; eklenti portalı jar'ları Central'a yönlendiriyor →
+  429. Ayna betiğinde her depoda Central adresi aynaya çevrilir, proje depolarındaki portal adresi de (dahil edilen
+  derlemelerde; ana derlemede proje deposu yok).
+
 ## Reddedilen / değişen yollar
 
 - **Ortak kütüphane (her uygulamaya giren Kotlin AAR + Flutter eklentisi)** — 2026-10-31 sabah planlandı, aynı gün
@@ -246,6 +271,9 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
 - 2026-10-31 "Notlar yayınları" (Faz 4; sürüm değişmedi, Messenger kanalına dokunulmadı): `HARITA_NOT` +
   `ASISTAN_SORGU`, izin `dev.kaimau.notlar.izin.ASISTAN` (knownCerts: asistan, Harita, Kanallarım). Değişen:
   Notlar (kişisel kaynak kümesi), asistan (`uses-permission`, Notlar becerisi), Harita ve Kanallarım (`uses-permission`).
+- 2026-11-01 "Notlar görsel eki" (sürüm değişmedi): `HARITA_NOT`'a `image` (content:// JPEG) ve `video` (YouTube
+  kimliği) ekleri; `text` boş olabilir. Değişen: Notlar (kişisel alıcı), asistan (`Notlar.yaz`, FileProvider). Harita,
+  Kanallarım, Dosya Okuyucu etkilenmez (eski alıcı bilinmeyen eki yok sayar, boş metinli yayını atar).
 - 2026-10-31 "Dosya Okuyucu oku/ozetle/durdur" (K7; sürüm değişmedi): `SONUÇ.pi` artık `oku:/yol`, `ozet:/yol`,
   `durdur:` bağlantısı da olabilir (Dosya Okuyucu'nun Dart kancası karşılar). Değişen: Dosya Okuyucu (köprü + Dart),
   asistan (özet için 45 sn bekleme kalktı). Harita, Kanallarım, Notlar etkilenmez.

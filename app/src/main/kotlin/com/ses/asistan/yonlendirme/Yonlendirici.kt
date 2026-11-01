@@ -37,33 +37,40 @@ object Yonlendirici {
         "dosyalar" to (DosyalarInfo.PKG to "Dosya Okuyucu"),
     )
 
-    /** 1. adım; null: Dicio becerileri sırayla denenir. */
+    /**
+     * 1. adım; null: Dicio becerileri (bizimkiler başta) sırayla denenir. Uyanma adı yalnız ipucudur (2026-11-01,
+     * telefon: "Hey Kanallar" sonrası "not alır mısın" Kanallarım'a zorlanıp "anlamadım" oluyordu): not komutu her adla
+     * Notlar becerisine, adın becerisi anlamazsa cümle diğer becerilere ve Gemini'ye gider.
+     */
     fun once(ctx: SkillContext, utterances: List<String>): Pair<String, SkillWithResult<*>>? {
         val ad = SesDurumu.uyanmaAdiAl()
         Kopru.hazirla(ctx.android)
         val adaylar = Kopru.adaylar(ctx.android)
         val ilk = utterances.firstOrNull() ?: return null
-        return when (val k = Yonlendirme.once(ilk, ad, adaylar)) {
-            null -> null
-            is Yonlendirme.Karar.Ac -> {
-                val (paket, adi) = ACILAN.getValue(k.ad)
-                ilk to AcmaBecerisi(paket, adi).scoreAndWrapResult(ctx, ilk)
-            }
-            is Yonlendirme.Karar.Uygulamaya -> ilk to DevirBecerisi(k).scoreAndWrapResult(ctx, k.metin)
-            is Yonlendirme.Karar.Kanallar -> {
-                // tanıyıcının seçeneklerinden Kanallarım komutu olan (yoksa ilki): "anlamadım" da bizim beceriden
-                val metin = utterances.asSequence()
-                    .map { (Yonlendirme.once(it, ad, adaylar) as? Yonlendirme.Karar.Kanallar)?.metin ?: it }
-                    .firstOrNull { KanallarSozleri.parse(it) != null } ?: k.metin
-                ilk to KanallarBecerisi(zorla = true).scoreAndWrapResult(ctx, metin)
-            }
-            is Yonlendirme.Karar.Notlar -> {
-                val metin = utterances.asSequence()
-                    .map { (Yonlendirme.once(it, ad, adaylar) as? Yonlendirme.Karar.Notlar)?.metin ?: it }
-                    .firstOrNull { NotlarSozleri.parse(it) != null } ?: k.metin
-                ilk to NotlarBecerisi(zorla = true).scoreAndWrapResult(ctx, metin)
-            }
+        val k = Yonlendirme.once(ilk, ad, adaylar) ?: return null
+        if (k is Yonlendirme.Karar.Ac) {
+            val (paket, adi) = ACILAN.getValue(k.ad)
+            return ilk to AcmaBecerisi(paket, adi).scoreAndWrapResult(ctx, ilk)
         }
+        // tanıyıcının seçenekleri, uyanma adı atılmış; ilk uyan
+        fun bul(uyar: (String) -> Boolean) = utterances.asSequence()
+            .map { Yonlendirme.once(it, ad, adaylar)?.let(::kalan) ?: it }.firstOrNull(uyar)
+        bul(NotlarSozleri::notMu)?.let { return ilk to NotlarBecerisi().scoreAndWrapResult(ctx, it) }
+        return when (k) {
+            is Yonlendirme.Karar.Uygulamaya -> ilk to DevirBecerisi(k).scoreAndWrapResult(ctx, k.metin)
+            is Yonlendirme.Karar.Kanallar -> bul { KanallarSozleri.parse(it) != null }
+                ?.let { ilk to KanallarBecerisi(zorla = true).scoreAndWrapResult(ctx, it) }
+            is Yonlendirme.Karar.Notlar -> bul { NotlarSozleri.parse(it) != null }
+                ?.let { ilk to NotlarBecerisi().scoreAndWrapResult(ctx, it) }
+            is Yonlendirme.Karar.Ac -> null
+        }
+    }
+
+    private fun kalan(k: Yonlendirme.Karar): String? = when (k) {
+        is Yonlendirme.Karar.Uygulamaya -> k.metin
+        is Yonlendirme.Karar.Kanallar -> k.metin
+        is Yonlendirme.Karar.Notlar -> k.metin
+        is Yonlendirme.Karar.Ac -> null
     }
 
     /** 3. adım: hiçbir beceri anlamadı; devri o an kabul eden uygulama varsa ona. */

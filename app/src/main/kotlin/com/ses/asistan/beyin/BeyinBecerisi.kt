@@ -6,7 +6,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import com.ses.asistan.ajan.AjanCalistirici
 import com.ses.asistan.beceri.Cikti
+import com.ses.asistan.beceri.NotlarSozleri
+import com.ses.asistan.beceri.notAkisi
 import com.ses.asistan.kopru.Kopru
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -70,6 +73,8 @@ class BeyinBecerisi(
                 } ?: return Cikti("${cevap.ad} cevap vermedi.")
                 Cikti(s.metin.ifBlank { if (s.tamam) "Tamam." else "Olmadı." })
             }
+            is Gemini.Cevap.Not -> notAkisi(ctx, NotlarSozleri.Komut.NotAl(cevap.metin, cevap.ekran, cevap.konum, cevap.video))
+            is Gemini.Cevap.Ekran -> Cikti(AjanCalistirici.yap(ctx.android, cevap.gorev, cevap.uygulama))
             Gemini.Cevap.Bos -> Cikti("Anlamadım.")
         }
     }

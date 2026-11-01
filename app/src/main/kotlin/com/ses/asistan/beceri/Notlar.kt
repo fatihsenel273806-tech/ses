@@ -7,8 +7,10 @@ import android.content.Context
 import android.content.Intent
 import android.os.Handler
 import android.os.Looper
+import androidx.core.content.FileProvider
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
+import java.io.File
 import kotlin.coroutines.resume
 
 /**
@@ -28,14 +30,28 @@ object Notlar {
     /** Asistanın aldığı notlar bu klasöre ("Not al" Harita'da "Haritalar"a gider). */
     const val KLASOR = "Asistan"
     private const val SURE_MS = 12_000L
+    /** Asistanın FileProvider'ı (manifest, `res/xml/ekran_yollari.xml`). */
+    private const val EKRAN_YETKI = "com.ses.asistan.ekran"
 
     class Bulunan(val baslik: String, val metin: String, val zaman: Long)
 
     fun kurulu(ctx: Context) = runCatching { ctx.packageManager.getPackageInfo(PKG, 0) }.isSuccess
 
-    /** Notu yazar; [TAMAM], [SIRADA] ya da 0 (kurulu değil, kişisel derleme değil, cevap yok). */
-    suspend fun yaz(ctx: Context, metin: String, klasor: String = KLASOR): Int =
-        gonder(ctx, Intent(YAZ).putExtra("text", metin).putExtra("folder", klasor))?.first ?: 0
+    /**
+     * Notu yazar; [TAMAM], [SIRADA] ya da 0 (kurulu değil, kişisel derleme değil, cevap yok). [resim]: ekran görüntüsü
+     * (notun eki olur; okuma izni yalnız Notlar'a verilir). [video]: görsel o YouTube videosunun notuna eklenir.
+     * Metin boş olabilir (yalnız görsel).
+     */
+    suspend fun yaz(ctx: Context, metin: String, klasor: String = KLASOR, resim: File? = null, video: String? = null): Int {
+        val i = Intent(YAZ).putExtra("text", metin).putExtra("folder", klasor)
+        if (resim != null) {
+            val uri = FileProvider.getUriForFile(ctx, EKRAN_YETKI, resim)
+            ctx.grantUriPermission(PKG, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            i.putExtra("image", uri.toString())
+            video?.let { i.putExtra("video", it) }
+        }
+        return gonder(ctx, i)?.first ?: 0
+    }
 
     /** Son notlar ([terimler] boşsa) ya da terimlerin hepsini içerenler. null: ulaşılamadı; boş liste: yok. */
     suspend fun sorgula(ctx: Context, terimler: List<String>, adet: Int): Pair<Int, List<Bulunan>>? {

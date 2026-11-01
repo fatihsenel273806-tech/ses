@@ -4,11 +4,11 @@ import java.util.Locale
 
 /**
  * Kanallarım (ve çalan uygulama) sesli komutları. Harita `MediaWords` (sarma, baştan, "ne çalıyor", son izlenenler,
- * harita listesi, adıyla video/liste açma, videoya not) ve `RuleParser.media` (duraklat, sonraki, kaldığım yer,
+ * harita listesi, adıyla video/liste açma) ve `RuleParser.media` (duraklat, sonraki, kaldığım yer,
  * indirilenler, oynatma listeleri) kuralları birebir taşındı. Android'e bağlı değil (JVM testi).
  *
- * Sıra Harita'daki gibi: önce video notu (içindeki "durdur" gibi kelimeler komut sanılmasın), sonra MediaWords,
- * sonra genel medya kuralları ("X videosunu aç" eskiden "video aç" sanılıp kaldığı yerden sürdürüyordu).
+ * Sıra Harita'daki gibi: önce not komutları (video notu dahil; [NotlarSozleri]'ne bırakılır, içindeki "durdur" gibi
+ * kelimeler komut sanılmasın), sonra MediaWords, sonra genel medya kuralları ("X videosunu aç" eskiden "video aç" sanılıp kaldığı yerden sürdürüyordu).
  */
 object KanallarSozleri {
     /** RESUME: Kanallarım'da kaldığım yerden; PLAY: çalan/son uygulamayı sürdür. WHAT: "ne çalıyor". */
@@ -20,8 +20,6 @@ object KanallarSozleri {
         data class Sar(val ms: Long, val mutlak: Boolean) : Komut
         /** Listelerde adıyla aranır. */
         data class Bul(val ad: String) : Komut
-        /** "Videoya not al …": [metin] boşsa dikte edilir. */
-        data class Not(val metin: String) : Komut
     }
 
     /** Genel medya komutu mu (Dicio'nun medya becerisiyle ortak): Kanallarım çalmıyorsa Dicio'nunki çalışır. */
@@ -33,10 +31,6 @@ object KanallarSozleri {
     private val NOKTALAMA2 = Regex("[.!?,]")
     private val BOSLUK = Regex("\\s+")
 
-    private val VIDEO_NOTE = Regex(
-        "^(?:(?:bu |şu )?videoya|videoyla ilgili|video için|kanallarım'?a) not (?:al|et|yaz|düş)(?:ır mısın|ar mısın)?(?=\\s|[:,.]|$)[\\s:,.-]*(.*)$|^video notu(?: al)?(?=\\s|[:,.]|$)[\\s:,.-]*(.*)$",
-        setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL),
-    )
     private const val NUM = "(\\d+|bir|iki|üç|dört|beş|altı|yedi|sekiz|dokuz|on|on beş|yirmi|otuz|kırk|kırk beş|elli|altmış|doksan|yarım)"
     private val SEEK = Regex("$NUM (saniye|sn|dakika|dk)(?:lık)? (geri|ileri|öne)")
     private val SEEK_TO = Regex("$NUM\\.? ?(?:dakika|dk)(?:ya|ye|sına|sine)? (?:git|atla|sar|gel|al)")
@@ -68,10 +62,8 @@ object KanallarSozleri {
 
     /** [raw]: uyanma sözü atılmış özgün cümle (not metni büyük/küçük harfiyle kalsın). */
     fun parse(raw: String): Komut? {
-        VIDEO_NOTE.find(raw.trim())?.let { m ->
-            val text = m.groupValues.drop(1).firstOrNull { it.isNotBlank() }.orEmpty()
-            return Komut.Not(text.trim().trimEnd('.'))
-        }
+        // "videoya not al … durdur …": Notlar becerisinin (video notu orada)
+        if (NotlarSozleri.notMu(raw)) return null
         val t = raw.lowercase(TR).replace(NOKTALAMA, " ").replace(BOSLUK, " ").trim().trimEnd('.')
         SEEK.find(t)?.let { m ->
             val n = number(m.groupValues[1]) ?: return@let

@@ -199,6 +199,7 @@ class WakeService : Service() {
             AudioFormat.ENCODING_PCM_16BIT,
             6400,
         )
+        UyanmaKapisi.yankiGider(ar) // ASISTAN: telefonda çalan video sesi uyanmayı bastırmasın
 
         var audio = ShortArray(0)
         var nextWakeWordAllowed = Instant.MIN

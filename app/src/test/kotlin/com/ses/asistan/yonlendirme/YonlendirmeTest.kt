@@ -38,6 +38,11 @@ class YonlendirmeTest {
         assertEquals(Karar.Ac("kanallar"), Yonlendirme.once("Kanallarım uygulamasını açar mısın", null, emptyList()))
         assertEquals(Karar.Ac("harita"), Yonlendirme.once("haritayı aç", "asistan", listOf(harita)))
         assertEquals(Karar.Ac("dosyalar"), Yonlendirme.once("dosya okuyucuyu aç", null, emptyList()))
+        // uygulamalar arası geçiş
+        assertEquals(Karar.Ac("notlar"), Yonlendirme.once("notlara geç", null, emptyList()))
+        assertEquals(Karar.Ac("harita"), Yonlendirme.once("haritaya geri dön", null, listOf(harita)))
+        assertEquals(Karar.Ac("kanallar"), Yonlendirme.once("kanallarıma geç", null, emptyList()))
+        assertEquals(Karar.Ac("dosyalar"), Yonlendirme.once("dosya okuyucuya geç", null, emptyList()))
         // uyanma adından sonra yalnız "aç" yeter
         assertEquals(Karar.Ac("harita"), Yonlendirme.once("aç", "harita", listOf(harita)))
         assertEquals(Karar.Ac("notlar"), Yonlendirme.once("Hey Notlar, uygulamayı aç", null, emptyList()))

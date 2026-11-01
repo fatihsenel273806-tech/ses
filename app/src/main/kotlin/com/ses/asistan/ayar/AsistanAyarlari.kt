@@ -93,6 +93,8 @@ fun LazyListScope.asistanAyarlari() {
     item { VarsayilanBolumu() }
     item { SettingsCategoryTitle("Bağlı uygulamalar") }
     item { BagliBolumu() }
+    item { SettingsCategoryTitle("Not ekleri (ekran görüntüsü, konum)") }
+    item { NotEkleriBolumu() }
     item { SettingsCategoryTitle("Beyin (Gemini)") }
     item { BeyinBolumu() }
 }

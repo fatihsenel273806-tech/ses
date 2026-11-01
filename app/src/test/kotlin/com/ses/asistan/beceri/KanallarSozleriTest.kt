@@ -44,11 +44,11 @@ class KanallarSozleriTest {
 
     // ---- asistan
 
-    @Test fun videoNotu() {
-        assertEquals(Komut.Not(""), p("videoya not al"))
-        assertEquals(Komut.Not("Burayı tekrar izle"), p("Videoya not al: Burayı tekrar izle."))
-        // notun içindeki "durdur" komut sanılmaz
-        assertEquals(Komut.Not("müziği durdur bölümü önemli"), p("video notu müziği durdur bölümü önemli"))
+    /** Not komutları (video notu dahil) Notlar becerisinin; içindeki "durdur" Kanallarım komutu sanılmaz. */
+    @Test fun notKomutlariNotlarda() {
+        assertNull(p("videoya not al"))
+        assertNull(p("video notu müziği durdur bölümü önemli"))
+        assertNull(p("not alır mısın deneme diye"))
     }
 
     @Test fun genelKomutlarDicioIleOrtak() {

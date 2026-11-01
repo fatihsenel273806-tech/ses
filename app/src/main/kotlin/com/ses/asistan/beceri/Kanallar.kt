@@ -183,6 +183,12 @@ class Kanallar private constructor(private val ctx: Context) {
         }
     }
 
+    /** Kanallarım'da çalan videonun YouTube kimliği (oturumun `mediaId`'si "liste/kimlik"); yoksa null. */
+    suspend fun videoKimligi(): String? = withContext(Dispatchers.Main) {
+        val t = hedef()?.takeIf { it.packageName == PKG } ?: return@withContext null
+        t.metadata?.getString(MediaMetadata.METADATA_KEY_MEDIA_ID)?.substringAfterLast('/')?.takeIf { VIDEO_ID.matches(it) }
+    }
+
     /** Oturumun bildirdiği konum, son bildirimden bu yana geçen süreyle ilerletilmiş (oturum konumu seyrek bildirir). */
     private fun MediaController.konum(): Long {
         val s = playbackState ?: return 0L
@@ -200,6 +206,7 @@ class Kanallar private constructor(private val ctx: Context) {
         const val PKG = "com.kanallarim.app"
         /** Kanallarım'ın oturum komutu (PlaybackService.NOTE ile aynı ad). */
         private const val NOTE = "not_al"
+        private val VIDEO_ID = Regex("[A-Za-z0-9_-]{11}")
         private const val BAGLANTI_MS = 5_000L
         private const val NOT_MS = 20_000L
         private val KNOWN = mapOf(

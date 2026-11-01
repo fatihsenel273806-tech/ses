@@ -14,6 +14,7 @@ Dosya Okuyucu) kendi ses özellikleriyle devam eder; onlardaki asistan köprüs�
 | 5 | Dosya Okuyucu köprüsü (yalnız kişisel derleme) | 🟨 kod iki depoda main'de (aç, son dosya, sesli oku/durdur, özet — K7); telefonda deneme bekliyor |
 | 6 | Beyin: Gemini yedek beceri, bağlı uygulamaların araçları, konuşma belleği | 🟨 kod main'de; telefonda Gemini anahtarıyla deneme bekliyor |
 | 7 | İsteğe bağlı: openWakeWord, araç/Bluetooth düğmesi, varsayılan asistan, Dicio güncellemeleri | 🟨 kod main'de (varsayılan asistan, kulaklık/araç düğmesi, güncelleme rutini); openWakeWord ve düğmeler telefonda |
+| 8 | Telefon geri bildirimi 2: not akışı her yerde (SS, konum, video notu), uyanma adı ipucu, ekran ajanı (Gemini) + kurallı ekran komutları | 🟨 kod dalda (`ccr-46f484a9-x4howd`), Notlar alıcısı `kaimau1/not` main'de; telefonda deneme bekliyor |
 
 **Otomatik zincir (kullanıcı 2026-10-31):** "1 faz yap, main'e pushla, sonra yeni oturumda diğer fazı başlat, o da
 bitirip main'e merge etsin; kalan işler bitinceye kadar otomatik." Her oturum bir faz yapar, `main`'e alır ve bir
@@ -58,6 +59,8 @@ HyperOS: pil "kısıtlama yok", otomatik başlatma.
 - Faz 5: "kira sözleşmesi dosyasını aç", "son dosyayı aç", "bu dosyayı sesli oku", "okumayı durdur", "bu dosyayı özetle".
 - Faz 6: Gemini anahtarıyla "Türkiye'nin en yüksek dağı hangisi?", "beş dakikalık bir şey kur", Harita açıkken
   "Kızılay'a nasıl giderim" → "peki oraya ne kadar sürer".
+- Faz 8: Ayarlar › Asistan › "Not ekleri": ekran kontrolü (erişilebilirlik) ve konum "her zaman"; sonra Faz 8'in 🟨
+  maddesindeki cümleler.
 - Faz 7: güç tuşuna basılı tutma (kilitliyken de), araç Bluetooth'unun sesli komut düğmesi, kulaklık düğmesine uzun
   basma (ilk seferde "Asistan › Her zaman"). openWakeWord/Vosk karşılaştırması (K5) istenirse ölçümle.
 
@@ -312,6 +315,27 @@ mikrofon ─► │ Uyanma: Vosk dilbilgisi ("hey asistan", "hey harita", "hey n
   tarifine ("not'e gidiliyor"), "kanallarımı aç" kaldığı yerden sürdürmeye düşüyordu. Düzeltme: yönlendirmenin 0.
   adımı adıyla uygulama açma (`Yonlendirme.acilacak` → `AcmaBecerisi`: Harita, Kanallarım, Notlar, Dosya Okuyucu;
   "Hey Notlar, aç" da); bizim beceriler Dicio'nunkilerin önünde (eşit puanda öndeki kazanır).
+
+### Faz 8 — Telefon geri bildirimi 2 (2026-11-01)
+Kullanıcı: "notlar uygulamamıza not alamıyor; kanallarda iken sadece hey kanallar ile uyanıyor … ben kanallarda video
+izlerken notlara not aldırabilmeliyim, haritada, navigasyonda, dosya yöneticisinde; SS alabilmeli nota ekleyebilmeli
+… asistan ilgili uygulamalarda A'dan Z'ye her şeyi yapabilsin; Gemini aktifken her şeyi, değilken olabildiğince çok".
+Kararlar (soruldu): uyanma kipi "ilgili uygulamalar açıkken" kalır; SS erişilebilirlik servisiyle; ek ne söylenirse
+o ("SS ekle", "konum ekle", "video notu"; söylenmezse düz not); yalnız "ekran görüntüsü al" → görüntü + dikte edilen
+açıklamayla yeni not; ekran ajanı yalnız bağlı dört uygulamada; geri alınamayan işte önce sesli onay.
+- [x] Uyanma adı ipucu: not komutu her adla Notlar'a; adın becerisi anlamazsa diğer beceriler ve Gemini
+  (`Yonlendirici.once`). Video notu Kanallarım becerisinden Notlar becerisine taşındı.
+- [x] Not kuralları genişledi (`NotlarSozleri.notAl`): "X diye not al", "yeni bir not aç içine X yaz", "şunu not al",
+  ekler (ekran, konum, video). Gemini `not_al` aracı aynı akışa gider (`notAkisi`).
+- [x] Ekran görüntüsü (`ek/EkranServisi`, `ek/Ekran`), konum (`ek/Konum`, "her zaman" izni), Notlar'a görsel eki
+  (FileProvider + `image`/`video` ekleri; Notlar alıcısı görseli notun eki yapar, UploadQueue yükler).
+- [x] Ekran ajanı (`ajan/`): Gemini `ekranda_yap` → her adımda ekran metni, tek eylem (tıkla, yaz, kaydır, geri,
+  uygulama aç, onay iste, bitir), en çok 15 adım; riskli düğmede çalıştırıcı da onay sorar. Gemini'siz: "aşağı
+  kaydır", "geri git", "X'e dokun", "X kutusuna Y yaz", "ekranda ne yazıyor" (`EkranBecerisi`).
+- [x] Video sesi açıkken uyanma: uyanma kaydına yankı giderici + gürültü bastırıcı (`UyanmaKapisi.yankiGider`).
+- [ ] 🟨 Telefonda: Kanallarım'da video çalarken "Hey Notlar/Asistan" (yankı giderici işe yarıyor mu), "not alır mısın
+  deneme diye", "ekran görüntüsü al", "not al park yeri konumu da ekle", "video notu al önemli ekran görüntüsü de ekle",
+  Harita navigasyonda not; Gemini ile "Notlar'da market notunu aç ve sonuna yumurta ekle", "Harita'da ayarları aç".
 
 ## 7. Açık kararlar
 

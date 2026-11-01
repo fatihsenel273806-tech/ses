@@ -2,4 +2,6 @@
 <!-- Asistan: Dicio'nun adını ezer (debug ve release kaynak kümeleri) -->
 <resources>
     <string name="app_name" translatable="false">Asistan</string>
+    <string name="ekran_servisi_adi">Asistan: ekran ve uygulama kontrolü</string>
+    <string name="ekran_servisi_aciklama">Sesle verilen işleri Harita, Kanallarım, Notlar ve Dosya Okuyucu’da sizin yerinize yapar (dokunma, yazma, kaydırma) ve ekran görüntüsünü nota ekler. Başka uygulamaların ekranı okunmaz. Silme, gönderme gibi geri alınamayan işlerden önce sesli onay sorar.</string>
 </resources>

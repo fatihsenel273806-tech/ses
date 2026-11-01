@@ -25,16 +25,16 @@ class GeminiTest {
     private fun cagri(ad: String, args: JSONObject) = JSONObject().put("functionCall", JSONObject().put("name", ad).put("args", args))
 
     @Test fun araclarUygulamalardanKurulur() {
-        assertEquals(listOf("asistan_komutu", "uygulamaya_harita", "dosya_okuyucu_ac", "dosya_okuyucu_ozetle"), adlar(araclar))
+        assertEquals(listOf("asistan_komutu", "not_al", "ekranda_yap", "uygulamaya_harita", "dosya_okuyucu_ac", "dosya_okuyucu_ozetle"), adlar(araclar))
         val asistan = araclar.bildirim.getJSONObject(0).getString("description")
         assertTrue(asistan, "Saat kaç; Not al, yarın süt alınacak." in asistan)
-        assertTrue("Bir yere rota kurup" in araclar.bildirim.getJSONObject(1).getString("description"))
+        assertTrue("Bir yere rota kurup" in araclar.bildirim.getJSONObject(3).getString("description"))
     }
 
     @Test fun adlarAsciiVeTekil() {
         assertEquals("kanallarim_ac", Gemini.adParcasi("Kanallarım: aç!"))
         val iki = Gemini.araclar(listOf(harita, harita.copy(paket = "baska")), emptyList())
-        assertEquals(listOf("asistan_komutu", "uygulamaya_harita", "uygulamaya_harita_2"), adlar(iki))
+        assertEquals(listOf("asistan_komutu", "not_al", "ekranda_yap", "uygulamaya_harita", "uygulamaya_harita_2"), adlar(iki))
         assertEquals("baska", (iki.adlar["uygulamaya_harita_2"] as Gemini.Arac.Devret).paket)
     }
 
@@ -54,6 +54,15 @@ class GeminiTest {
         )
         assertEquals(Gemini.Cevap.Asistan("saat kaç"), Gemini.coz(cevap(cagri("asistan_komutu", JSONObject().put("cumle", "saat kaç"))), araclar, "saati söyler misin"))
         assertEquals(Gemini.Cevap.Bos, Gemini.coz(cevap(cagri("bilinmeyen", JSONObject())), araclar, "x"))
+        assertEquals(
+            Gemini.Cevap.Not("kenara yaz bunu", ekran = true, konum = false, video = false),
+            Gemini.coz(cevap(cagri("not_al", JSONObject().put("metin", "kenara yaz bunu").put("ekran_goruntusu", true))), araclar, "x"),
+        )
+        assertEquals(
+            Gemini.Cevap.Ekran("Kızılay'ı favorilere ekle", "harita"),
+            Gemini.coz(cevap(cagri("ekranda_yap", JSONObject().put("gorev", "Kızılay'ı favorilere ekle").put("uygulama", "harita"))), araclar, "x"),
+        )
+        assertEquals(Gemini.Cevap.Bos, Gemini.coz(cevap(cagri("ekranda_yap", JSONObject())), araclar, "x"))
     }
 
     @Test fun metinSesliOkunacakHaleGelir() {

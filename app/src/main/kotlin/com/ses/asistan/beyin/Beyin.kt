@@ -59,6 +59,15 @@ object Beyin {
         }
     }
 
+    /**
+     * Ham Gemini çağrısı (ekran ajanı): aynı anahtar/model havuzu, [govde] modele göre kurulur. Cevap gövdesi döner.
+     * Ana iş parçacığında çağrılmaz.
+     */
+    suspend fun cagir(ctx: Context, govde: (model: String) -> JSONObject): String {
+        val a = BeyinAyarlari.al(ctx)
+        return withContext(Dispatchers.IO) { a.havuz.calistir(a.anahtarlar, a.modeller) { k, m -> istek(k, m, govde(m)) } }
+    }
+
     private fun etiket(ctx: Context, paket: String) = runCatching {
         ctx.packageManager.getApplicationLabel(ctx.packageManager.getApplicationInfo(paket, 0)).toString()
     }.getOrDefault(paket.substringAfterLast('.'))

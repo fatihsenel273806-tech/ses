@@ -32,6 +32,7 @@ import org.stypox.dicio.skills.translation.TranslationInfo
 import org.stypox.dicio.skills.weather.WeatherInfo
 import org.stypox.dicio.skills.joke.JokeInfo
 import org.stypox.dicio.skills.flashlight.FlashlightInfo
+import com.ses.asistan.ajan.EkranInfo // ASISTAN
 import com.ses.asistan.beceri.KanallarInfo // ASISTAN
 import com.ses.asistan.beceri.NotlarInfo // ASISTAN
 import com.ses.asistan.beceri.DosyalarInfo // ASISTAN
@@ -49,6 +50,7 @@ class SkillHandler @Inject constructor(
         // ASISTAN: bizim beceriler önde — eşit puanda listede önce gelen kazanır ("not al" yol tarifi sanılıyordu)
         KanallarInfo, // ASISTAN
         NotlarInfo, // ASISTAN
+        EkranInfo, // ASISTAN: kaydır, geri, dokun (bağlı dört uygulamada)
         DosyalarInfo, // ASISTAN
         WeatherInfo,
         SearchInfo,

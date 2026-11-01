@@ -5,6 +5,9 @@ import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.media.AudioRecord
+import android.media.audiofx.AcousticEchoCanceler
+import android.media.audiofx.AudioEffect
+import android.media.audiofx.NoiseSuppressor
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -116,8 +119,27 @@ object UyanmaKapisi {
         return false
     }
 
+    @Volatile private var efektler: List<AudioEffect> = emptyList()
+
+    /**
+     * Yankı giderici ve gürültü bastırıcı (aygıtta varsa). Ölçüm (HAFIZA, 2026-10-31): arkada video konuşmasıyla "hey
+     * asistan" 1/4, "hey notlar" 0/4 duyuluyordu (telefon: "Kanallarım'dayken yalnız Hey Kanallar uyanıyor"). Telefonun
+     * kendi hoparlöründen çalan video yankı gidericiyle kayıttan çıkarılır; aygıt desteklemezse hiçbir şey değişmez.
+     * Telefonda ölçülecek.
+     */
+    fun yankiGider(ar: AudioRecord) {
+        val id = ar.audioSessionId
+        efektler = listOfNotNull(
+            if (AcousticEchoCanceler.isAvailable()) runCatching { AcousticEchoCanceler.create(id) }.getOrNull() else null,
+            if (NoiseSuppressor.isAvailable()) runCatching { NoiseSuppressor.create(id) }.getOrNull() else null,
+        ).onEach { runCatching { it.enabled = true } }
+        Log.i(TAG, "uyanma efektleri: ${efektler.joinToString { it.descriptor.name }}")
+    }
+
     /** Döngü bitince (servis durdu): mikrofon artık bizde değil. */
     fun bitti() {
         SesDurumu.uyanmaKaydiAcik = false
+        efektler.forEach { runCatching { it.release() } }
+        efektler = emptyList()
     }
 }

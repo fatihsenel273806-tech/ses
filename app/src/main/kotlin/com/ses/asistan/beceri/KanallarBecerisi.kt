@@ -8,11 +8,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import com.ses.asistan.beceri.KanallarSozleri.Eylem
 import com.ses.asistan.beceri.KanallarSozleri.Komut
-import com.ses.asistan.ses.Dictation
-import com.ses.asistan.ses.Ses
-import com.ses.asistan.ses.Tones
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import org.dicio.skill.context.SkillContext
 import org.dicio.skill.skill.AlwaysWorstScore
 import org.dicio.skill.skill.FloatScore
@@ -25,8 +20,8 @@ import org.dicio.skill.skill.Specificity
 
 /**
  * Kanallarım becerisi (PLAN Faz 2; Kanallarım'da değişiklik yok). Harita'nın Kanallarım komutları asistana taşındı:
- * sarma, baştan, "ne çalıyor", son izlenenler, harita listesi, indirilenler, oynatma listeleri, adıyla açma, videoya
- * not. Dicio'nun genel medya becerisi kalır: "durdur", "sonraki" gibi genel komutlarda bizimki yalnız Kanallarım
+ * sarma, baştan, "ne çalıyor", son izlenenler, harita listesi, indirilenler, oynatma listeleri, adıyla açma (videoya not
+ * Notlar becerisinde). Dicio'nun genel medya becerisi kalır: "durdur", "sonraki" gibi genel komutlarda bizimki yalnız Kanallarım
  * çalarken (ya da "Hey Kanallar" denince) öne geçer.
  */
 object KanallarInfo : SkillInfo("kanallarim") {
@@ -39,18 +34,21 @@ object KanallarInfo : SkillInfo("kanallarim") {
     override fun build(ctx: SkillContext): Skill<*> = KanallarBecerisi(zorla = false)
 }
 
-/** [zorla]: "Hey Kanallar" ile çağrıldı: genel komutlar da bizim, anlaşılmazsa "anlamadım" denir. */
+/**
+ * [zorla]: "Hey Kanallar" ile çağrıldı: genel komutlar ("durdur", "sonraki") Kanallarım çalmasa da bizim. Anlaşılmayan
+ * cümle diğer becerilere ve Gemini'ye gider ([com.ses.asistan.yonlendirme.Yonlendirici]).
+ */
 class KanallarBecerisi(private val zorla: Boolean) : Skill<Komut?>(KanallarInfo, Specificity.HIGH) {
 
     override fun score(ctx: SkillContext, input: String): Pair<Score, Komut?> {
-        val k = KanallarSozleri.parse(input) ?: return Pair(if (zorla) FloatScore(1f) else AlwaysWorstScore, null)
+        val k = KanallarSozleri.parse(input) ?: return Pair(AlwaysWorstScore, null)
         if (!zorla && KanallarSozleri.genel(k) && !Kanallar.al(ctx.android).kanallarimCaliyor()) return Pair(AlwaysWorstScore, k)
         return Pair(FloatScore(1f), k)
     }
 
     override suspend fun generateOutput(ctx: SkillContext, inputData: Komut?): SkillOutput {
         val k = Kanallar.al(ctx.android)
-        val komut = inputData ?: return Cikti("Kanallarım için anlamadım. “Geri sar”, “ne çalıyor”, “X videosunu aç” diyebilirsiniz.")
+        val komut = inputData ?: return Cikti("Kanallarım için anlamadım.")
         if (!k.kurulu()) return Cikti("Kanallarım uygulaması kurulu değil.")
         return when (komut) {
             is Komut.Sar -> {
@@ -62,7 +60,6 @@ class KanallarBecerisi(private val zorla: Boolean) : Skill<Komut?>(KanallarInfo,
                 )
             }
             is Komut.Bul -> bul(k, komut.ad)
-            is Komut.Not -> not(ctx, k, komut.metin)
             is Komut.Medya -> when (komut.eylem) {
                 Eylem.WHAT -> k.calan().let { Cikti(KanallarSozleri.calanCumlesi(it.baslik, it.sanatci, it.konumMs)) }
                 Eylem.MAP_LIST -> liste(k, "map", "Harita listem", "Harita listen boş. Kanallarım'da Listeler → Harita için'den ekleyin.")
@@ -95,26 +92,6 @@ class KanallarBecerisi(private val zorla: Boolean) : Skill<Komut?>(KanallarInfo,
         return Cikti(Secim.oku(baslik, adlar), plan = InteractionPlan.StartSubInteraction(
             reopenMicrophone = true, nextSkills = listOf(SecimBecerisi(adlar, items.map { it.mediaId!! })),
         ))
-    }
-
-    /**
-     * "Videoya not al …": not tek dinlemeyle alınmaz, dikte sürer (Harita `dictateNote`): komutla söylenen kısım
-     * başlangıçtır, susunca (~3,5 sn) ya da "tamam" deyince yazılır, "iptal" almaz. Not Kanallarım'ın oturumuna gider,
-     * Kanallarım o anın altyazısıyla Notlar'a yazar.
-     */
-    private suspend fun not(ctx: SkillContext, k: Kanallar, metin: String): SkillOutput {
-        val c = k.calan()
-        if (!c.kanallarim || c.baslik == null) return Cikti("Kanallarım'da çalan bir video yok.")
-        val ses = withContext(Dispatchers.Main) { Ses.al(ctx.android) }
-        if (metin.isBlank()) konusVeBekle(ses, "Videoya ne not alayım?") else ses.isaret(Tones.Kind.LISTEN)
-        val t = dikte(ctx.android, metin)
-            ?: return Cikti(if (metin.isBlank()) "Not almadım." else "Not iptal edildi.")
-        return when (k.notAl(Dictation.finish(t))) {
-            1 -> Cikti("Not alındı.")
-            2 -> Cikti("Not alındı; Notlar'a giriş yapılınca YouTube klasörüne geçecek.")
-            null -> Cikti("Kanallarım'da çalan bir video yok.")
-            else -> Cikti("Not kaydedilemedi. Notlar uygulamasını güncelleyin.")
-        }
     }
 
     private companion object {
