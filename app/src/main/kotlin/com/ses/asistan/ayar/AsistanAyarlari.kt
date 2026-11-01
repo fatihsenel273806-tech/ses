@@ -289,7 +289,8 @@ private fun uyanmaDurumu(ctx: android.content.Context): String {
     if (androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) !=
         android.content.pm.PackageManager.PERMISSION_GRANTED) return "Mikrofon izni yok"
     if (!WakeService.isRunning()) return "Uyanma servisi çalışmıyor: “Uyanma yöntemi”nde Hey Asistan (Vosk) seçili olmalı"
-    return "Ekran dışında: " + UyanmaPolitikasi.neden(UyanmaKapisi.durum(ctx).copy(asistanEkranda = false))
+    val oran = VoskWakeDevice.sonEsik?.takeIf { it.toplam > 0 }?.let { " · tanıyıcı karelerin %${it.verilen * 100 / it.toplam}'inde çalıştı" }.orEmpty()
+    return "Ekran dışında: " + UyanmaPolitikasi.neden(UyanmaKapisi.durum(ctx).copy(asistanEkranda = false)) + oran
 }
 
 @Composable

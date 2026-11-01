@@ -34,6 +34,10 @@ object UyanmaPolitikasi {
         val ilgiliOnde: String? = null,
         /** Telefon görüşmesi sürüyor: mikrofon görüşmenindir. */
         val gorusmede: Boolean = false,
+        /** Ekran açık (kilitliyken son öndeki uygulama "önde" sayılmasın). */
+        val ekranAcik: Boolean = true,
+        /** Müzik/video çalıyor (ekran kapalıyken Kanallarım dinlenirken "Hey Kanallar" çalışsın). */
+        val sesCaliyor: Boolean = false,
     )
 
     fun aracta(bluetoothAdlari: List<String>, aracAdi: String): Boolean {
@@ -49,7 +53,9 @@ object UyanmaPolitikasi {
             Kip.YALNIZ_ELLE -> d.elleAcik || d.asistanEkranda
             Kip.ARACTA_VE_ELLE -> d.elleAcik || d.asistanEkranda || d.navigasyonda || d.uygulamaIstiyor || aracta(d.bluetoothAdlari, d.aracAdi)
             // ilgili uygulamalarla birlikte çalışır, boştayken kayıt durur (kullanıcı isteği 2026-10-31)
-            Kip.UYGULAMALAR_ACIKKEN -> d.elleAcik || d.asistanEkranda || d.navigasyonda || d.ilgiliOnde != null
+            // ekran kapalıyken yalnız ses çalarken (pil, 2026-11-01: mikrofon kilitli ekranda saatlerce açık kalıyordu)
+            Kip.UYGULAMALAR_ACIKKEN -> d.elleAcik || d.asistanEkranda || d.navigasyonda ||
+                (d.ilgiliOnde != null && (d.ekranAcik || d.sesCaliyor))
         }
     }
 
@@ -60,6 +66,8 @@ object UyanmaPolitikasi {
         d.elleAcik -> "Dinleniyor (elle açıldı)"
         d.asistanEkranda -> "Dinleniyor (asistan ekranda)"
         d.navigasyonda && d.kip == Kip.UYGULAMALAR_ACIKKEN -> "Dinleniyor (navigasyon)"
+        d.kip == Kip.UYGULAMALAR_ACIKKEN && d.ilgiliOnde != null && !d.ekranAcik && !d.sesCaliyor ->
+            "Dinlenmiyor: ekran kapalı (ses çalmıyor)"
         d.kip == Kip.UYGULAMALAR_ACIKKEN -> d.ilgiliOnde?.let { "Dinleniyor ($it açık)" }
             ?: "Dinlenmiyor: ilgili uygulama (Harita, Kanallarım, Notlar, Dosya Okuyucu) açık değil"
         d.kip == Kip.YALNIZ_ELLE -> "Dinlenmiyor: yalnız elle (bildirimdeki “Dinle / bırak” ya da aşağıdaki anahtar)"

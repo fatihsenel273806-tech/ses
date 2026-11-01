@@ -3,6 +3,7 @@ package com.ses.asistan.giris
 import android.content.Context
 import android.util.Log
 import com.ses.asistan.ses.SesDurumu
+import com.ses.asistan.ses.SesEsigi
 import com.ses.asistan.ses.Voice
 import com.ses.asistan.ses.WakeGrammar
 import kotlinx.coroutines.CoroutineScope
@@ -47,6 +48,15 @@ class VoskWakeDevice(
     private var rec: Recognizer? = null
     private val decide = WakeGrammar.Decider()
     private var wasDeaf = false
+    /** Sessizlikte tanıyıcı çalışmaz (pil; [SesEsigi]). */
+    private val esik = SesEsigi(CHUNK).also { sonEsik = it }
+    private var duyuldu = false
+    /** Kapının verdiği kare tanıyıcıya (bir kez kurulur: döngüde nesne üretilmez). */
+    private val besle: (ShortArray) -> Unit = { kare ->
+        val r = rec!!
+        if (!duyuldu) duyuldu = if (r.acceptWaveForm(kare, kare.size)) decide.feed(r.result, final = true)
+        else decide.feed(r.partialResult, final = false)
+    }
 
     override fun download() {
         _state.value = WakeState.Downloading(Progress.UNKNOWN)
@@ -88,13 +98,17 @@ class VoskWakeDevice(
     override fun processFrame(audio16bitPcm: ShortArray): Boolean {
         val r = rec ?: yukle()
         if (SesDurumu.konusuyor) { wasDeaf = true; return false }
-        if (wasDeaf) { wasDeaf = false; r.reset(); decide.reset() } // kendi sesimizin yarısı sonuca karışmasın
-        val heard = if (r.acceptWaveForm(audio16bitPcm, audio16bitPcm.size)) decide.feed(r.result, final = true)
-        else decide.feed(r.partialResult, final = false)
+        if (wasDeaf) { wasDeaf = false; r.reset(); decide.reset(); esik.sifirla() } // kendi sesimizin yarısı sonuca karışmasın
+        duyuldu = false
+        val kapandi = esik.gec(audio16bitPcm, besle)
+        // ses bitti: Vosk'un bekleyen cümlesi kapanır (yeni adlar yalnız son sonuçla karar verir)
+        if (kapandi && !duyuldu) { duyuldu = decide.feed(r.finalResult, final = true); if (!duyuldu) { r.reset(); decide.reset() } }
+        val heard = duyuldu
         if (!heard) return false
         SesDurumu.sonUyanmaAdi = decide.name
         r.reset()
         decide.reset()
+        esik.sifirla()
         return true
     }
 
@@ -139,6 +153,10 @@ class VoskWakeDevice(
         private const val CHUNK = RATE / 10
         private const val MODEL_URL = "https://alphacephei.com/vosk/models/vosk-model-small-tr-0.3.zip"
         private const val MODEL_SHA256 = "8c8d07cec1bce31add14967c16891c84152cdf76d391e33c08278119b9ea96e5"
+
+        /** Ayarlardaki "tanıyıcının çalıştığı oran" için son kurulan kapı. */
+        @Volatile var sonEsik: SesEsigi? = null
+            private set
 
         private fun modelDir(ctx: Context) = File(ctx.filesDir, "vosk-tr")
         fun hazir(ctx: Context) = File(modelDir(ctx), "final.mdl").exists()

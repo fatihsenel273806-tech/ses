@@ -54,6 +54,11 @@ class UyanmaPolitikasiTest {
         assertTrue(dinlemeli(Durum(kip = k, asistanEkranda = true)))
         assertFalse(dinlemeli(Durum(kip = k, ilgiliOnde = "Harita", gorusmede = true)))
         assertTrue(UyanmaPolitikasi.neden(Durum(kip = k, ilgiliOnde = "Harita")).contains("Harita açık"))
+        // ekran kapalı (pil): son öndeki uygulama sayılmaz; ses çalıyorsa ya da navigasyonda dinlenir
+        assertFalse(dinlemeli(Durum(kip = k, ilgiliOnde = "Kanallarım", ekranAcik = false)))
+        assertTrue(dinlemeli(Durum(kip = k, ilgiliOnde = "Kanallarım", ekranAcik = false, sesCaliyor = true)))
+        assertTrue(dinlemeli(Durum(kip = k, navigasyonda = true, ekranAcik = false)))
+        assertTrue(UyanmaPolitikasi.neden(Durum(kip = k, ilgiliOnde = "Notlar", ekranAcik = false)).contains("ekran kapalı"))
         // ayarda sırayla saklanıyor: eski kipler yerinde kalmalı
         assertEquals(listOf(Kip.ARACTA_VE_ELLE, Kip.HER_ZAMAN, Kip.YALNIZ_ELLE, Kip.UYGULAMALAR_ACIKKEN), Kip.values().toList())
     }

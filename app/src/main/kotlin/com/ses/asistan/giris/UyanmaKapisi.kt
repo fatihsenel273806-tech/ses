@@ -28,8 +28,8 @@ import com.ses.asistan.ses.UyanmaPolitikasi
  */
 object UyanmaKapisi {
     private const val TAG = "UyanmaKapisi"
-    /** Kayıt dururken döngünün bekleme adımı. */
-    private const val BEKLE_MS = 100L
+    /** Kayıt dururken döngünün bekleme adımı (saniyede 10 uyanma pil harcıyordu; tepki ≤0,5 sn). */
+    private const val BEKLE_MS = 500L
     /** Görüşme ve Bluetooth durumunun yeniden okunma aralığı (sistem çağrısı her karede yapılmaz). */
     private const val YOKLA_MS = 1000L
 
@@ -38,6 +38,9 @@ object UyanmaKapisi {
     @Volatile private var bluetooth: List<String> = emptyList()
     @Volatile private var gorusmede = false
     @Volatile private var ilgiliOnde: String? = null
+    @Volatile private var ekranAcik = true
+    @Volatile private var calan = false
+    private var pm: android.os.PowerManager? = null
     private var yoklandi = 0L
 
     @Synchronized
@@ -45,6 +48,7 @@ object UyanmaKapisi {
         if (am != null) return
         val a = ctx.applicationContext.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         ayarlar = SesAyarlari.al(ctx)
+        pm = ctx.applicationContext.getSystemService(Context.POWER_SERVICE) as android.os.PowerManager
         bluetooth = bluetoothAdlari(a)
         if (Build.VERSION.SDK_INT >= 23) {
             a.registerAudioDeviceCallback(object : AudioDeviceCallback() {
@@ -70,6 +74,8 @@ object UyanmaKapisi {
         if (now - yoklandi >= YOKLA_MS) {
             yoklandi = now
             gorusmede = a.mode == AudioManager.MODE_IN_CALL || a.mode == AudioManager.MODE_IN_COMMUNICATION
+            ekranAcik = pm?.isInteractive ?: true
+            calan = a.isMusicActive
             // yalnız bu kipte: kullanım verisi sorgusu boşuna yapılmasın
             ilgiliOnde = if (ayarlar.uyanmaKipi == UyanmaPolitikasi.Kip.UYGULAMALAR_ACIKKEN) ilgiliUygulama(ctx) else null
         }
@@ -83,6 +89,8 @@ object UyanmaKapisi {
             ilgiliOnde = ilgiliOnde,
             uygulamaIstiyor = SesDurumu.uygulamaUyanmaIstiyor,
             gorusmede = gorusmede,
+            ekranAcik = ekranAcik,
+            sesCaliyor = calan,
         )
     }
 

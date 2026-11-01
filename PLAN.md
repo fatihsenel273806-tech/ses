@@ -333,6 +333,8 @@ açıklamayla yeni not; ekran ajanı yalnız bağlı dört uygulamada; geri alı
   uygulama aç, onay iste, bitir), en çok 15 adım; riskli düğmede çalıştırıcı da onay sorar. Gemini'siz: "aşağı
   kaydır", "geri git", "X'e dokun", "X kutusuna Y yaz", "ekranda ne yazıyor" (`EkranBecerisi`).
 - [x] Video sesi açıkken uyanma: uyanma kaydına yankı giderici + gürültü bastırıcı (`UyanmaKapisi.yankiGider`).
+- [x] Pil (telefon: Asistan %42): sessizlikte Vosk çalışmaz (`SesEsigi`), ekran kapalıyken yalnız ses çalarken /
+  navigasyonda dinlenir, bekleme döngüsü seyrek. 🟨 telefonda pil ekranı ve "hey" kaçıyor mu.
 - [ ] 🟨 Telefonda: Kanallarım'da video çalarken "Hey Notlar/Asistan" (yankı giderici işe yarıyor mu), "not alır mısın
   deneme diye", "ekran görüntüsü al", "not al park yeri konumu da ekle", "video notu al önemli ekran görüntüsü de ekle",
   Harita navigasyonda not; Gemini ile "Notlar'da market notunu aç ve sonuna yumurta ekle", "Harita'da ayarları aç".

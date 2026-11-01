@@ -191,6 +191,14 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
   buluta (Drive ya da Storage, kullanıcının seçimi) Notlar'ın UploadQueue'su uygulama açılınca yükler — yerel
   yüklemeyle kullanıcının eşitleme seçimi atlanmasın diye. Konum: asistan çoğu zaman arka planda → "her zaman izin
   ver" gerekir (Ayarlar › Asistan › Not ekleri).
+- **2026-11-01 — Pil: Asistan %42** (telefon: 6 sa'de toplam CPU 28 dk, ön plan 25 sn, "uyanık tut" 2 sa 14 dk;
+  kodda WakeLock yok → "uyanık tut" mikrofonun açık kaldığı süre). Nedenler: (1) Vosk sessizlikte de her 100 ms'lik
+  kareyi işliyordu; (2) "İlgili uygulamalar açıkken" kipinde ekran kilitliyken son öndeki uygulama önde sayılabiliyordu;
+  (3) kayıt dururken döngü 100 ms'de bir uyanıyordu. Düzeltme: `SesEsigi` (enerji kapısı: taban × 2, en az 150, 500
+  üstü hep açık → video/araçta davranış aynı; 3 kare ön bellek, 15 kare sürme, kapanınca Vosk `finalResult`), ekran
+  kapalıyken yalnız ses çalıyorsa / navigasyonda / elle, bekleme 500 ms. Ayarlar › "Uyanma şu an" tanıyıcının
+  çalıştığı kare oranını gösterir. Telefonda: aynı pil ekranı + `top`; kapı "hey"i kaçırıyor mu (ölçüm fikstürü Vosk
+  çıktısı olduğu için kapı JVM'de ölçülemedi).
 - **Bulut derleme tuzağı (2026-11-01, init betiği)**: Dicio'nun dahil edilen derlemeleri (`dicio-sentences-compiler`,
   `sentences-compiler-plugin`) kendi proje depolarını kullanıyor; eklenti portalı jar'ları Central'a yönlendiriyor →
   429. Ayna betiğinde her depoda Central adresi aynaya çevrilir, proje depolarındaki portal adresi de (dahil edilen
