@@ -1,3 +1,7 @@
+> **BIRAKILDI (2026-11-02).** Merkezi asistan telefonda çok pil tüketiyordu. Ses ve not akışı bağlı
+> uygulamaların kendi içine alındı: Harita ("Hey Harita" yalnız navigasyonda, dışında mikrofon düğmesi),
+> Kanallarım ve Dosya Okuyucu (asistan düğmesiyle not → Notlar). Bu depo yalnız başvuru içindir.
+
 # Asistan
 
 Kişisel merkezi Türkçe sesli asistan: "Hey Asistan" (ve "Hey Harita", "Hey Notlar" gibi uygulama adları) ile

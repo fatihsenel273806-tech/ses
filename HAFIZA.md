@@ -171,6 +171,11 @@ Geçerli kararlar, taşınan tuzaklar, reddedilen yollar. Değişen kural günce
   beceriler `SkillHandler` listesinin başında. Ders: Dicio'nun genel cümleleri (`.where.`, `.what.` yakalayıcıları)
   kısa Türkçe komutları yutar; yeni beceri eklerken Dicio'nun cümle dosyalarıyla çakışma denetlenir.
 
+- **2026-11-02 — Merkezi asistan bırakıldı** (kullanıcı: "çok fazla pil tüketiyor … mantığı bağlı uygulamaların
+  içerisine vermek istiyorum"). Sürekli dinleyen WakeService + Vosk pil yiyordu. Yeni düzen: Harita kendi ses yığınıyla
+  (Vosk yalnız navigasyonda), Kanallarım ve Dosya Okuyucu'da (kişisel) düğmeyle dikte → Notlar; cevaplar toast,
+  navigasyonda kısa sesli onay. Köprü kodu Harita, Notlar, Dosya Okuyucu'dan silindi (2026-11-02). Depo arşivlenir.
+
 ## Reddedilen / değişen yollar
 
 - **Ortak kütüphane (her uygulamaya giren Kotlin AAR + Flutter eklentisi)** — 2026-10-31 sabah planlandı, aynı gün
